@@ -1,0 +1,151 @@
+:root {
+  --primary: #607AFB;
+  --background-light: #f5f6f8;
+  --background-dark: #0f1323;
+  --foreground-light: #101922;
+  --foreground-dark: #f6f7f8;
+  --card-light: #ffffff;
+  --card-dark: #1b2734;
+  --subtle-light: #e5e7eb;
+  --subtle-dark: #374151;
+
+  --white: #ffffff;
+  --black-transparent: rgba(0, 0, 0, 0.6);
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--white);
+}
+
+body {
+  background-color: var(--background-dark);
+}
+
+.header {
+  color: var(--white);
+  height: 8vh;
+  width: 100vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 2vw;
+}
+
+.header-logo {
+  font-weight: bold;
+  font-size: 1.6rem;
+}
+
+.header-links-container {
+  width: 10vw;
+}
+
+.header-links{
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.header-links a{
+  text-decoration: none;
+  color: var(--white);
+  font-size: 1rem;
+}
+
+.header-links a:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+
+.header-buttons {
+  width: 15vw;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.primary-btn {
+  padding: 10px 15px;
+  border-radius: 8px;
+  color: white;
+  border: none;
+}
+
+.primary-btn:hover {
+  transform: scale(1.1);
+  cursor: pointer;
+  transition: all ease-in-out 0.2s;
+}
+
+.btn-2 {
+  background-color: var(--background-dark);
+}
+
+.btn-2:hover {
+  background-color: var(--subtle-dark);
+}
+
+.btn-1 {
+  background-color: var(--primary);
+}
+
+.footer {
+  width: 100%;
+  height: 8vh;
+  background-color: var(--card-dark);
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.footer-section {
+  flex: 0.8;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.footlogo {
+  padding-left: 2vw;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.footlinks {
+  display: flex;
+  justify-content: center;
+}
+
+.footer-links {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  width: 60%;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: var(--gray-400);
+}
+
+.footer-links a:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.copyright {
+  justify-content: end;
+  padding-right: 2vw;
+  color: var(--gray-400);
+}

@@ -1,0 +1,134 @@
+:root {
+  --primary: #607AFB;
+  --background-light: #f5f6f8;
+  --background-dark: #0f1323;
+  --foreground-light: #101922;
+  --foreground-dark: #f6f7f8;
+  --card-light: #ffffff;
+  --card-dark: #1b2734;
+  --subtle-light: #e5e7eb;
+  --subtle-dark: #374151;
+
+  --white: #ffffff;
+  --black-transparent: rgba(0, 0, 0, 0.6);
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+}
+
+.main-section {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  width: 100vw;
+  align-items: center;
+}
+
+.hero-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 65vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url(https://publish.eastleighvoice.co.ke/mugera_lock/uploads/2024/08/matatu2.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  filter: blur(5px);
+  transform: scale(1.05);
+  z-index: -1;
+}
+
+.hero-msg {
+  font-size: 4rem;
+  text-align: center;
+  margin-bottom: 5vh;
+}
+
+.hero-desc {
+  font-size: 1.4rem;
+  max-width: 50%;
+  text-align: center;
+  margin-bottom: 5vh;
+  color: var(--gray-200);
+}
+
+.hero-btns {
+  width: 20vw;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.hero-btn {
+  width: 7vw;
+  font-size: 1.2rem;
+}
+
+.features {
+  width: 100%;
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 15vh;
+  margin-bottom: 15vh;
+}
+
+.features-info {
+  flex: 0.2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.features-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2vw;
+  width: 80%;
+  flex: 0.8;
+}
+
+.features-card {
+  background-color: var(--card-dark);
+  border-radius: 10px;
+  padding: 10%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-logo {
+  flex: 0.3;
+  background-color: var(--subtle-dark);
+  border-radius: 10px;
+  width: 25%;
+}
+
+.card-info {
+  flex: 0.6;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  justify-content: end;
+}
+
+.card-title {
+  margin-bottom: 1vh;
+}
+
+.card-desc {
+  color: var(--gray-400);
+  font-size: 1.2rem;
+}
