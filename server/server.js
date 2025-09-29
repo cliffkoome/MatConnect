@@ -1,8 +1,12 @@
 require("dotenv").config();
-
+const path = require("path");
 const express = require("express");
 const { syncDB } = require("./models");
 const app = express();
+
+const isPkg = typeof process.pkg !== 'undefined';
+const basePath = isPkg ? path.dirname(process.execPath) : __dirname;
+app.use(express.static(path.join(basePath, '../public')));
 
 // Middleware
 app.use(express.json());
