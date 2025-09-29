@@ -22,7 +22,6 @@ a {
 
 .container {
   width: 100%;
-  max-width: 1024px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 1.5rem;
@@ -42,13 +41,13 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 4rem;
+  height: 8vh;
 }
 
 .logo {
-  font-size: 1.25rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  color: var(--primary);
+  color: black;
 }
 
 .main-nav {
@@ -150,6 +149,12 @@ main.container {
   font-size: 0.875rem;
   color: var(--gray-500);
   margin: 0.25rem 0 0;
+}
+
+.stage-selector {
+  max-width: 60vw;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (min-width: 640px) {

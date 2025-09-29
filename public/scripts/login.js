@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.querySelector('.form');
-
+  const accessToken = localStorage.getItem('accessToken');
+  const role = localStorage.getItem('role');
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -20,7 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await response.json();
 
         if (response.ok) {
-          window.location.href = '../select-stage.html';
+          localStorage.setItem('accessToken', result.accessToken);
+          localStorage.setItem('role', result.role);
+          if (result.role === 'Admin') {
+            window.location.href = '../admin-dashboard.html';
+          } else if (result.role === 'Passenger') {
+            window.location.href = '../select-stage.html';
+          }
         } else {
           alert(result.message || 'Login failed');
         }

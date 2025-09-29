@@ -119,10 +119,18 @@ body {
 }
 
 .card-logo {
-  flex: 0.3;
+  flex: 0.2;
   background-color: var(--subtle-light);
   border-radius: 10px;
-  width: 25%;
+  width: 20%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.fa-regular {
+  color: var(--primary);
 }
 
 .card-info {
