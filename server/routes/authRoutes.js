@@ -10,8 +10,8 @@ router.post('/login', loginUser);
 router.post('/register', createUser);
 
 // Check login status
-router.get('/me/doctor', authMiddleware('Doctor'), me);
-router.get('/me/secretary', authMiddleware('Secretary'), me);
+router.get('/me/admin', authMiddleware('Admin'), me);
+router.get('/me/passenger', authMiddleware('Passenger'), me);
 
 // Refresh Token
 router.post('/refresh-token', refreshAccessToken);
