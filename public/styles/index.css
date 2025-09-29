@@ -16,6 +16,11 @@
   --gray-500: #6b7280;
 }
 
+body {
+  background-color: var(--background-light);
+  color: var(--foreground-light);
+}
+
 .main-section {
   display: flex;
   flex-direction: column;
@@ -55,6 +60,8 @@
   font-size: 4rem;
   text-align: center;
   margin-bottom: 5vh;
+  color: var(--white);
+  text-shadow: 2px 2px 8px var(--black-transparent);
 }
 
 .hero-desc {
@@ -62,7 +69,8 @@
   max-width: 50%;
   text-align: center;
   margin-bottom: 5vh;
-  color: var(--gray-200);
+  color: var(--white);
+  text-shadow: 1px 1px 4px var(--black-transparent);
 }
 
 .hero-btns {
@@ -102,7 +110,8 @@
 }
 
 .features-card {
-  background-color: var(--card-dark);
+  background-color: var(--card-light);
+  border: 1px solid var(--subtle-light);
   border-radius: 10px;
   padding: 10%;
   display: flex;
@@ -111,7 +120,7 @@
 
 .card-logo {
   flex: 0.3;
-  background-color: var(--subtle-dark);
+  background-color: var(--subtle-light);
   border-radius: 10px;
   width: 25%;
 }
@@ -129,6 +138,6 @@
 }
 
 .card-desc {
-  color: var(--gray-400);
+  color: var(--gray-500);
   font-size: 1.2rem;
 }

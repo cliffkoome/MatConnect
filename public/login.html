@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatConnect Login</title>
+  <link rel="stylesheet" href="./styles/login.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script src="./scripts/login.js" defer></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="form-wrapper">
+      <div class="text-center">
+        <h1 class="title">Welcome Back to MatConnect</h1>
+        <p class="subtitle">Sign in to continue</p>
+      </div>
+      <form class="form" action="#" method="POST">
+        <input type="hidden" name="remember" value="true">
+        <div class="input-container">
+          <div>
+            <label for="email-address" class="sr-only">Email or Username</label>
+            <input type="text" id="email-address" name="email" required placeholder="Email or Username"
+              class="input input-top">
+          </div>
+          <div>
+            <label for="password" class="sr-only">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Password"
+              autocomplete="current-password" class="input input-bottom">
+          </div>
+        </div>
+        <div class="flex-between">
+          <div class="text-sm">
+            <a href="#" class="link">Forgot Password?</a>
+          </div>
+        </div>
+        <div>
+          <button type="submit" class="button">Login</button>
+        </div>
+      </form>
+      <p class="footer-text">
+        Don't have an account?
+        <a href="./signup.html" class="link">Sign Up</a>
+      </p>
+    </div>
+  </div>
+</body>
+
+</html>

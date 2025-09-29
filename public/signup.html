@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - MatConnect</title>
+    <link rel="stylesheet" href="./styles/signup.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="./scripts/signup.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="form-wrapper">
+            <div class="text-center">
+                <h1 class="title">Create an Account</h1>
+                <p class="subtitle">
+                    Join MatConnect for real-time matatu updates.
+                </p>
+            </div>
+            <form class="form" action="#" method="POST">
+                <div class="input-group">
+                    <div>
+                        <label for="full-name" class="sr-only">Full Name</label>
+                        <input type="text" id="full-name" name="full-name" required placeholder="Full Name" class="input">
+                    </div>
+                    <div>
+                        <label for="email-address" class="sr-only">Email address</label>
+                        <input type="email" id="email-address" name="email" required placeholder="Email address" autocomplete="email" class="input">
+                    </div>
+                    <div>
+                        <label for="password" class="sr-only">Password</label>
+                        <input type="password" id="password" name="password" required placeholder="Password" autocomplete="new-password" class="input">
+                    </div>
+                    <div>
+                        <label for="confirm-password" class="sr-only">Confirm Password</label>
+                        <input type="password" id="confirm-password" name="confirm-password" required placeholder="Confirm Password" autocomplete="new-password" class="input">
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="button">
+                        Sign Up
+                    </button>
+                </div>
+            </form>
+            <div class="link">
+                <a href="./login.html">
+                    Already have an account? Log in
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
