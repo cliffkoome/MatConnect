@@ -174,3 +174,7 @@ main.container {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.profile-icon:hover {
+  cursor: pointer;
+}

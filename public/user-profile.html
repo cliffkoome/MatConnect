@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Profile</title>
+  <link rel="stylesheet" href="./styles/user-profile.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="./scripts/user-profile.js" defer></script>
+</head>
+
+<body class="dark">
+  <div class="page-wrapper">
+    <header class="site-header">
+      <div class="container">
+        <div class="header-content">
+          <div class="logo" onclick="window.location.href='index.html'">
+            <h1>MatConnect</h1>
+          </div>
+          <div class="header-actions">
+            <button class="icon-button">
+              <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z">
+                </path>
+              </svg>
+            </button>
+            <div class="avatar"
+              style='background-image: url("https://lh3.googleusercontent.com/a/ACg8ocK_3tC2kG-p_gl5aV_u3iY2-dss_t6c117vXoB09W2Y=s96-c");'>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="profile-card">
+        <div class="card-header">
+          <h2>Profile</h2>
+          <p>Manage your personal details and preferences.</p>
+        </div>
+
+        <div class="profile-details-section">
+          <div class="profile-picture-container">
+            <div class="profile-picture">
+              <svg class="profile-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                  stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </div>
+          </div>
+          <form class="form-grid">
+            <div class="form-group">
+              <label for="name">Name</label>
+              <input class="form-input" id="name" type="text" value="John Doe" />
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input class="form-input" id="email" type="email" value="john.doe@ma3route.com" />
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input class="form-input" id="phone" type="tel" value="+254 712 345 678" />
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Update Information</button>
+            </div>
+          </form>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- <div class="password-reset-section">
+          <h3>Password Reset</h3>
+          <form class="form-grid">
+            <div class="form-group">
+              <label for="new_password">New Password</label>
+              <input class="form-input" id="new_password" placeholder="Enter new password" type="password" />
+            </div>
+            <div class="form-group">
+              <label for="confirm_password">Confirm New Password</label>
+              <input class="form-input" id="confirm_password" placeholder="Confirm new password" type="password" />
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" type="submit">Reset Password</button>
+            </div>
+          </form>
+        </div> -->
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>
