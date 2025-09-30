@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { loginUser, createUser, me, refreshAccessToken, logoutUser } = require("../controllers/authController");
+const { loginUser, createUser, me, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword } = require("../controllers/authController");
 const authMiddleware = require("../middleware/authMiddleware");
 
 // Login Route
@@ -18,5 +18,11 @@ router.post('/refresh-token', refreshAccessToken);
 
 // Log Out
 router.post('/logout', logoutUser);
+
+//Route to request password reset\
+router.post('/requestPasswordReset', requestPasswordReset);
+
+// Route to reset password
+router.post('/resetpassword/:id/:token', resetPassword);
 
 module.exports = router;
