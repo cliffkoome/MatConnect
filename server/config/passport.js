@@ -1,57 +1,54 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { User } = require('../models');
+require('dotenv').config();
 
-const callbackURL = `${process.env.SERVER_URL || 'http://localhost:5000'}/api/auth/google/callback`;
+console.log("Configuring Passport...");
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? "Loaded" : "MISSING");
+console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "Loaded" : "MISSING");
+console.log("JWT_SECRET:", process.env.JWT_SECRET ? "Loaded" : "MISSING");
+
+// Construct the absolute callback URL. This is crucial for Google OAuth.
+const callbackURL = `${process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 5000}`}/api/auth/google/callback`;
+console.log("Using Google OAuth Callback URL:", callbackURL);
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: callbackURL
+    callbackURL: callbackURL,
+    // Pass the request object to the callback to access session info, etc.
+    passReqToCallback: true
   },
-  async (accessToken, refreshToken, profile, done) => {
+  async (req, accessToken, refreshToken, profile, done) => {
     try {
-      // Find a user based on their Google ID
-      let user = await User.findOne({ where: { googleId: profile.id } });
-
-      if (user) {
-        // If user exists, proceed
-        return done(null, user);
-      }
-
-      // If no user with that Google ID, check for an existing user with the same email
-      user = await User.findOne({ where: { email: profile.emails[0].value } });
-
-      if (user) {
-        // If a user with that email exists, link the Google ID to their account
-        user.googleId = profile.id;
-        await user.save();
-        return done(null, user);
-      }
-
-      // If no user exists at all, create a new one
-      const newUser = await User.create({
-        googleId: profile.id,
-        name: profile.displayName,
-        email: profile.emails[0].value,
-        role: 'Passenger', // Default role for new sign-ups
-        // Password is not set for OAuth users
+      console.log('➡️  [passport.js] - Step 3: Google strategy verify callback executed.');
+      console.log('   Received profile from Google:', { id: profile.id, displayName: profile.displayName, emails: profile.emails });
+      
+      console.log('   Finding or creating user in the database...');
+      const [user, created] = await User.findOrCreate({
+        where: { googleId: profile.id },
+        defaults: {
+          name: profile.displayName,
+          email: profile.emails[0].value,
+          googleId: profile.id,
+          role: 'Passenger' // Default role for new Google sign-ups
+        }
       });
 
-      return done(null, newUser);
+      if (created) {
+        console.log('   ✅ New user created via Google:', user.toJSON());
+      } else {
+        console.log('   ✅ Existing user found via Google:', user.toJSON());
+      }
 
+      // The 'done' callback attaches the user to req.user
+      return done(null, user);
     } catch (err) {
-      return done(err, false);
+      console.error("   ❌ Error in Google OAuth strategy:", err);
+      return done(err, null);
     }
   }
 ));
 
-// These are not strictly necessary for JWT-based sessions but are good practice with Passport
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  const user = await User.findByPk(id);
-  done(null, user);
-});
+// Note: We are not using serializeUser/deserializeUser because we set `session: false` in the route.
+// Passport's session support is not needed for a JWT-based API.
