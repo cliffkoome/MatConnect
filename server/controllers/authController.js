@@ -336,12 +336,16 @@ const verifyLoginTwoFactor = async (req, res) => {
 
 // This function is called after passport successfully authenticates the user.
 const googleCallback = (req, res) => {
+  console.log('➡️  [authController] - Step 5: Executing googleCallback controller.');
   // The user object is attached to the request by Passport
+  console.log("   User object from Passport:", req.user ? req.user.toJSON() : 'Not found');
   const user = req.user;
 
   // Generate your application's tokens
+  console.log('   Generating JWT access token...');
   const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
 
+  console.log(`   ✅ Success! Redirecting to /auth-success.html with token and role.`);
   // Redirect the user to a page that will handle the tokens
   // We'll pass the access token and role in the URL query for the frontend to pick up.
   res.redirect(`/auth-success.html?accessToken=${accessToken}&role=${user.role}`);
