@@ -3,6 +3,8 @@ const path = require("path");
 const express = require("express");
 const { syncDB } = require("./models");
 const app = express();
+const passport = require('passport');
+require('./config/passport'); // Import the passport configuration
 
 const isPkg = typeof process.pkg !== 'undefined';
 const basePath = isPkg ? path.dirname(process.execPath) : __dirname;
@@ -13,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use(passport.initialize());
 
 // Sync DB & Start Server
 syncDB().then(() => {

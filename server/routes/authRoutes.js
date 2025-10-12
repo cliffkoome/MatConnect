@@ -1,7 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const { loginUser, createUser, me, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword } = require("../controllers/authController");
+const {
+  loginUser,
+  createUser,
+  me,
+  refreshAccessToken,
+  logoutUser,
+  requestPasswordReset,
+  resetPassword,
+  generateTwoFactorSecret,
+  verifyTwoFactorSecret,
+  verifyLoginTwoFactor,
+} = require("../controllers/authController");
 const authMiddleware = require("../middleware/authMiddleware");
+const passport = require("passport");
 
 // Login Route
 router.post('/login', loginUser);
@@ -24,5 +36,22 @@ router.post('/requestPasswordReset', requestPasswordReset);
 
 // Route to reset password
 router.post('/resetpassword/:id/:token', resetPassword);
+
+// --- Two-Factor Authentication Routes ---
+router.post('/2fa/setup', authMiddleware(), generateTwoFactorSecret);
+router.post('/2fa/verify', authMiddleware(), verifyTwoFactorSecret);
+router.post('/2fa/login', verifyLoginTwoFactor);
+
+// --- Google OAuth Routes ---
+
+// 1. Route to start the Google sign-in flow
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// 2. Callback route that Google redirects to after authentication
+router.get('/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login.html?error=auth_failed', session: false }),
+  require('../controllers/authController').googleCallback
+);
+
 
 module.exports = router;

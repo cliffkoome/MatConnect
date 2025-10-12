@@ -2,10 +2,11 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 const nodemailer = require("nodemailer");
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
 
 // Login user
 const loginUser = async (req, res) => {
-  console.log("Called");
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });
@@ -15,6 +16,20 @@ const loginUser = async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword)
       return res.status(401).json({ message: "Invalid password" });
+
+    // Check if 2FA is enabled for the user
+    if (user.twoFactorEnabled) {
+      // If 2FA is enabled, generate a temporary token
+      const tempToken = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "5m" } // Short-lived token
+      );
+      return res.status(200).json({
+        twoFactorRequired: true,
+        tempToken: tempToken,
+      });
+    }
 
     // Generate tokens
     const accessToken = jwt.sign(
@@ -26,7 +41,7 @@ const loginUser = async (req, res) => {
     const refreshToken = jwt.sign(
       { id: user.id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "7d" }
     );
 
     // Set refresh token in a secure, HTTP-only cookie
@@ -143,8 +158,7 @@ const requestPasswordReset = async (req, res, next) => {
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(404).json({ message: "User doesn't exist" });
 
-    const jwtSecret = process.env.JWT_SECRET || process.env.ACCESS_TOKEN_SECRET;
-    const secret = jwtSecret + user.password;
+    const secret = process.env.JWT_SECRET + user.password;
     const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '1h' });
 
     // Use env vars for mail credentials. For Gmail use an App Password or OAuth2.
@@ -215,8 +229,7 @@ const resetPassword = async (req, res, next) => {
       return res.status(400).json({ message: "User not exists!" });
     }
 
-    const jwtSecret = process.env.JWT_SECRET || process.env.ACCESS_TOKEN_SECRET;
-    const secret = jwtSecret + user.password;
+    const secret = process.env.JWT_SECRET + user.password;
 
     // verify token
     jwt.verify(token, secret);
@@ -233,4 +246,106 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
-module.exports = { loginUser, createUser, me, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword };
+// --- Two-Factor Authentication Controllers ---
+
+const generateTwoFactorSecret = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const secret = speakeasy.generateSecret({
+      name: `Realtime Matatu (${user.email})`,
+    });
+
+    // Temporarily store the un-verified secret.
+    // In a production app, you might want a separate field for a pending secret to not overwrite an existing enabled one.
+    await user.update({ twoFactorSecret: secret.base32 });
+
+    qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+      if (err) {
+        console.error("Error generating QR code:", err);
+        return res.status(500).json({ message: "Error generating QR code" });
+      }
+      res.json({ secret: secret.base32, qrCodeUrl: data_url });
+    });
+  } catch (error) {
+    console.error("Error setting up 2FA:", error);
+    res.status(500).json({ message: "Error setting up 2FA" });
+  }
+};
+
+const verifyTwoFactorSecret = async (req, res) => {
+  const { token } = req.body;
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user || !user.twoFactorSecret) {
+      return res.status(400).json({ message: "2FA not set up or user not found." });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: "base32",
+      token: token,
+    });
+
+    if (verified) {
+      await user.update({ twoFactorEnabled: true });
+      res.json({ message: "2FA enabled successfully" });
+    } else {
+      res.status(400).json({ message: "Invalid 2FA token" });
+    }
+  } catch (error) {
+    console.error("Error verifying 2FA token:", error);
+    res.status(500).json({ message: "Error verifying 2FA token" });
+  }
+};
+
+const verifyLoginTwoFactor = async (req, res) => {
+  const { tempToken, token } = req.body;
+  try {
+    const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    const user = await User.findByPk(decoded.id);
+
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      return res.status(400).json({ message: "2FA is not enabled for this user." });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: "base32",
+      token: token,
+      window: 1, // Allow for a 30-second window of tolerance
+    });
+
+    if (verified) {
+      // 2FA code is correct, issue the final access token
+      const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
+      const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+
+      res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict" });
+      res.json({ message: "Login successful", accessToken, role: user.role });
+    } else {
+      res.status(400).json({ message: "Invalid 2FA token" });
+    }
+  } catch (error) {
+    res.status(401).json({ message: "Invalid or expired temporary token." });
+  }
+};
+
+// This function is called after passport successfully authenticates the user.
+const googleCallback = (req, res) => {
+  // The user object is attached to the request by Passport
+  const user = req.user;
+
+  // Generate your application's tokens
+  const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
+
+  // Redirect the user to a page that will handle the tokens
+  // We'll pass the access token and role in the URL query for the frontend to pick up.
+  res.redirect(`/auth-success.html?accessToken=${accessToken}&role=${user.role}`);
+};
+
+
+module.exports = { loginUser, createUser, me, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword, generateTwoFactorSecret, verifyTwoFactorSecret, verifyLoginTwoFactor, googleCallback };

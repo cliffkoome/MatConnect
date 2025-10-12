@@ -16,8 +16,9 @@
     <div class="form-wrapper">
       <div class="text-center">
         <h1 class="title">Welcome Back to MatConnect</h1>
-        <p class="subtitle">Sign in to continue</p>
+        <p class="subtitle" id="subtitle-text">Sign in to continue</p>
       </div>
+      <div id="message-area" class="message" style="display: none;"></div>
       <form class="form" action="#" method="POST">
         <input type="hidden" name="remember" value="true">
         <div class="input-container">
@@ -31,6 +32,12 @@
             <input type="password" id="password" name="password" required placeholder="Password"
               autocomplete="current-password" class="input input-bottom">
           </div>
+          <!-- 2FA Token Input - Hidden by default -->
+          <div id="2fa-container" style="display: none;">
+            <label for="2fa-token" class="sr-only">2FA Token</label>
+            <input type="text" id="2fa-token" name="2fa-token" placeholder="6-digit code from your app"
+              autocomplete="one-time-code" class="input" inputmode="numeric" pattern="[0-9]*" maxlength="6">
+          </div>
         </div>
         <div class="flex-between">
           <div class="text-sm">
@@ -38,9 +45,16 @@
           </div>
         </div>
         <div>
-          <button type="submit" class="button">Login</button>
+          <button type="submit" class="button" id="submit-button">Login</button>
         </div>
       </form>
+      <div class="divider">
+        <span>OR</span>
+      </div>
+      <div>
+        <button type="button" class="button google-button" id="google-signin-button">
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google icon" /> Sign in with Google</button>
+      </div>
       <p class="footer-text">
         Don't have an account?
         <a href="./signup.html" class="link">Sign Up</a>
