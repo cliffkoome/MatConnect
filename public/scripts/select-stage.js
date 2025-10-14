@@ -42,6 +42,12 @@ if (profileIcon) {
         
         // Now you can use the user data to populate the page.
         console.log('Successfully fetched user:', user.name);
+        
+        // Update the profile picture if the URL exists
+        if (user.profilePictureUrl && profileIcon) {
+            profileIcon.src = user.profilePictureUrl;
+            console.log(user.profilePictureUrl);
+        }
 
     } catch (error) {
         console.error('Error fetching protected data:', error);
