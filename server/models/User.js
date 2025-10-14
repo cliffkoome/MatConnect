@@ -20,6 +20,10 @@ const User = sequelize.define(
       unique: true,
       allowNull: true,
     },
+    profilePictureUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     twoFactorSecret: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -30,7 +34,21 @@ const User = sequelize.define(
       allowNull: false,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ["email"],
+        name: "idx_users_email",
+      },
+      {
+        unique: true,
+        fields: ["googleId"],
+        name: "idx_users_googleid",
+      },
+    ],
+  }
 );
 
 module.exports = User;

@@ -3,8 +3,7 @@ const jwt = require("jsonwebtoken");
 const authMiddleware = (role) => {
   return (req, res, next) => {
     const authHeader = req.header("Authorization");
-    console.log("Authorization Header:", authHeader);
-
+    
     if (!authHeader) {
       return res
         .status(401)
@@ -21,8 +20,6 @@ const authMiddleware = (role) => {
     try {
       const verified = jwt.verify(token, process.env.JWT_SECRET);
       req.user = verified;
-      console.log("User verified:", req.user);
-
       if (role && req.user.role !== role) {
         return res
           .status(403)
