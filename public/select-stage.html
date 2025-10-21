@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatConnect - Select Stage</title>
+    <link rel="stylesheet" href="./styles/select-stage.css">
+    <link rel="stylesheet" href="./styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="./scripts/select-stage.js" defer></script>
+</head>
+
+<body>
+
+    <header class="site-header">
+        <div class="container nav-container">
+            <a class="logo" href="index.html">MatConnect</a>
+            <nav class="main-nav">
+                <a href="index.html">Home</a>
+                <a href="select-stage.html">Stages</a>
+                <a href="feedback-page.html">Feedback</a>
+            </nav>
+            <div class="user-profile">
+                <img alt="User profile picture" class="profile-icon" src="./images/pfp.jpg" onclick="location='user-profile.html'">
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="stage-selector">
+            <h1 class="main-title">Select Your Stage</h1>
+            <div class="stage-grid" id="stage-grid">
+                <!-- Stage cards will be dynamically inserted here -->
+                <p>Loading stages...</p>
+            </div>
+        </section>
+    </main>
+
+</body>
+
+</html>

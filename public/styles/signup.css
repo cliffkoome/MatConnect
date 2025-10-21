@@ -1,0 +1,164 @@
+:root {
+  --primary: #137fec;
+  --background-light: #f6f7f8;
+  --background-dark: #101922;
+}
+
+body {
+  background-color: var(--background-light);
+  font-family: 'Public Sans', sans-serif;
+}
+
+.dark body {
+  background-color: var(--background-dark);
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 28rem;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  margin: 1rem;
+}
+
+.dark .form-wrapper {
+  background-color: rgba(16, 25, 34, 0.5);
+}
+
+.form-wrapper>*+* {
+  margin-top: 2rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dark .title {
+  color: #ffffff;
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .subtitle {
+  color: #9ca3af;
+}
+
+.form {
+  margin-top: 2rem;
+}
+
+.form>*+* {
+  margin-top: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group>*+* {
+  margin-top: 1rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.input {
+  position: relative;
+  display: block;
+  width: 95%;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  background-color: var(--background-light);
+  border: 1px solid #d1d5db;
+  color: #111827;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.input::placeholder {
+  color: #6b7280;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.dark .input {
+  background-color: rgba(16, 25, 34, 0.7);
+  border-color: #374151;
+  color: #ffffff;
+}
+
+.dark .input::placeholder {
+  color: #9ca3af;
+}
+
+.button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  background-color: var(--primary);
+}
+
+.button:hover {
+  background-color: rgba(19, 127, 236, 0.9);
+}
+
+.button:focus {
+  outline: none;
+}
+
+.link {
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.link a {
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.link a:hover {
+  color: rgba(19, 127, 236, 0.9);
+}
