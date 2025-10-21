@@ -1,4 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // --- DOM Elements ---
+  const profileForm = document.querySelector('.profile-details-section .form-grid');
+  const passwordForm = document.querySelector('.password-reset-section .form-grid');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  // 2FA Elements
+  const twoFaStatus = document.getElementById('2fa-status');
+  const twoFaToggleBtn = document.getElementById('2fa-toggle-btn');
+  const twoFaModal = document.getElementById('2fa-modal');
+  const twoFaCloseModalBtn = document.getElementById('2fa-close-modal-btn');
+  const twoFaCancelBtn = document.getElementById('2fa-cancel-btn');
+  const twoFaVerifyBtn = document.getElementById('2fa-verify-btn');
+  const qrCodeContainer = document.getElementById('qr-code-container');
+  const twoFaTokenInput = document.getElementById('2fa-verify-token');
+
+  // --- State ---
   const token = localStorage.getItem('accessToken');
 
   // 1. Authentication Check: Redirect if no token is found.
@@ -11,28 +27,46 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchUserProfile(token);
 
   // 3. Add event listeners for the forms.
-  const profileForm = document.querySelector('.profile-details-section .form-grid');
-  const passwordForm = document.querySelector('.password-reset-section .form-grid');
-
   if (profileForm) {
     profileForm.addEventListener('submit', (e) => handleProfileUpdate(e, token));
   }
 
-  if (passwordForm) {
-    passwordForm.addEventListener('submit', (e) => handlePasswordReset(e, token));
+  // Logout listener
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logoutUser);
   }
 
-  // Note: You can add a logout button and hook it to this function.
-  // For example, clicking the avatar could trigger logout.
-  const avatar = document.querySelector('.avatar');
-  if (avatar) {
-    avatar.addEventListener('click', () => {
-      if (confirm('Are you sure you want to log out?')) {
-        logoutUser();
-      }
+  // 2FA Listeners
+  if (twoFaToggleBtn) {
+    twoFaToggleBtn.addEventListener('click', () => handle2FaToggle(token));
+  }
+  if (twoFaCloseModalBtn) {
+    twoFaCloseModalBtn.addEventListener('click', close2FaModal);
+  }
+  if (twoFaCancelBtn) {
+    twoFaCancelBtn.addEventListener('click', close2FaModal);
+  }
+  if (twoFaModal) {
+    twoFaModal.addEventListener('click', (e) => {
+      if (e.target === twoFaModal) close2FaModal();
     });
   }
+  if (twoFaVerifyBtn) {
+    twoFaVerifyBtn.addEventListener('click', () => handle2FaVerify(token));
+  }
 });
+
+/**
+ * Generic API fetch helper
+ */
+async function apiFetch(url, options) {
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'An API error occurred');
+  }
+  return response.json();
+};
 
 /**
  * Fetches user data from the server and populates the form.
@@ -40,24 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 async function fetchUserProfile(token) {
   try {
-    const response = await fetch('/api/auth/me/passenger', {
+    const user = await apiFetch('/api/auth/me/passenger', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      }
+      },
     });
-
-    if (response.status === 401 || response.status === 403) {
-      logoutUser(); // Token is invalid or expired.
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch user profile.');
-    }
-
-    const user = await response.json();
     populateProfileForm(user);
 
   } catch (error) {
@@ -73,8 +96,11 @@ async function fetchUserProfile(token) {
 function populateProfileForm(user) {
   document.getElementById('name').value = user.name || '';
   document.getElementById('email').value = user.email || '';
-  // The API doesn't provide a phone number, so we'll leave the default or set it to empty.
   document.getElementById('phone').value = user.phoneNumber || '';
+  document.getElementById('profile-img').src = user.profilePictureUrl || './images/pfp.jpg';
+  document.querySelector('.avatar').style.backgroundImage = `url(${user.profilePictureUrl || './images/pfp.jpg'})`;
+    
+  update2FaUI(user.twoFactorEnabled);
 }
 
 /**
@@ -91,17 +117,11 @@ async function handleProfileUpdate(event, token) {
   // Note: You need to create this endpoint on your backend.
   // Example: router.put('/api/users/me', authMiddleware, updateUser);
   try {
-    const response = await fetch('/api/users/me', {
+    await apiFetch('/api/users/me', {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, phoneNumber: phone }),
     });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Update failed.');
 
     alert('Profile updated successfully!');
   } catch (error) {
@@ -111,52 +131,85 @@ async function handleProfileUpdate(event, token) {
 }
 
 /**
- * Handles the submission of the password reset form.
- * @param {Event} event The form submission event.
+ * Handles the logic for enabling or disabling 2FA.
  * @param {string} token The JWT access token.
  */
-async function handlePasswordReset(event, token) {
-  event.preventDefault();
-  const newPassword = document.getElementById('new_password').value;
-  const confirmPassword = document.getElementById('confirm_password').value;
+async function handle2FaToggle(token) {
+  const isEnabled = document.getElementById('2fa-status').classList.contains('enabled');
 
-  if (newPassword !== confirmPassword) {
-    alert('Passwords do not match.');
+  if (isEnabled) {
+    // --- Disable 2FA ---
+    if (confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+      try {
+        await apiFetch('/api/auth/2fa/disable', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        alert('2FA has been disabled.');
+        update2FaUI(false);
+      } catch (error) {
+        alert(`Error disabling 2FA: ${error.message}`);
+      }
+    }
+  } else {
+    // --- Enable 2FA ---
+    try {
+      const data = await apiFetch('/api/auth/2fa/setup', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      document.getElementById('qr-code-container').innerHTML = `<img src="${data.qrCodeUrl}" alt="QR Code for 2FA" />`;
+      document.getElementById('2fa-modal').classList.remove('hidden');
+    } catch (error) {
+      alert(`Error setting up 2FA: ${error.message}`);
+    }
+  }
+}
+
+/**
+ * Handles the verification of the 2FA token from the modal.
+ * @param {string} token The JWT access token.
+ */
+async function handle2FaVerify(token) {
+  const twoFaCode = document.getElementById('2fa-verify-token').value;
+  if (!twoFaCode || twoFaCode.length !== 6) {
+    alert('Please enter a valid 6-digit code.');
     return;
   }
 
-  if (!newPassword) {
-    alert('Please enter a new password.');
-    return;
-  }
-
-  // Note: You need to create this endpoint on your backend.
-  // Example: router.post('/api/users/change-password', authMiddleware, changePassword);
   try {
-    const response = await fetch('/api/users/change-password', {
+    await apiFetch('/api/auth/2fa/verify', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ password: newPassword }),
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: twoFaCode }),
     });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Password reset failed.');
-
-    alert('Password changed successfully!');
-    event.target.reset(); // Clear the password fields.
+    alert('2FA enabled successfully!');
+    close2FaModal();
+    update2FaUI(true);
   } catch (error) {
-    console.error('Password reset error:', error);
-    alert(`Error: ${error.message}`);
+    alert(`Verification failed: ${error.message}`);
   }
+}
+
+function close2FaModal() {
+  document.getElementById('2fa-modal').classList.add('hidden');
+  document.getElementById('qr-code-container').innerHTML = '';
+  document.getElementById('2fa-verify-token').value = '';
+}
+
+function update2FaUI(isEnabled) {
+  const statusEl = document.getElementById('2fa-status');
+  const toggleBtn = document.getElementById('2fa-toggle-btn');
+  statusEl.textContent = isEnabled ? 'Enabled' : 'Disabled';
+  statusEl.className = `status-badge ${isEnabled ? 'enabled' : 'disabled'}`;
+  toggleBtn.textContent = isEnabled ? 'Disable 2FA' : 'Enable 2FA';
 }
 
 /**
  * Logs the user out by clearing the token and redirecting.
  */
-function logoutUser() {
+async function logoutUser() {
   localStorage.removeItem('accessToken');
+  localStorage.removeItem('role');
   window.location.href = '/login.html';
 }
