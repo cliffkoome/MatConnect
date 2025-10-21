@@ -339,5 +339,25 @@ const googleCallback = (req, res) => {
   res.redirect(`/auth-success.html?accessToken=${accessToken}&role=${user.role}`);
 };
 
+const disableTwoFactor = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-module.exports = { loginUser, createUser, me, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword, generateTwoFactorSecret, verifyTwoFactorSecret, verifyLoginTwoFactor, googleCallback };
+    // For enhanced security, you might require a password or 2FA token to disable.
+    // For simplicity here, we'll just disable it.
+    await user.update({
+      twoFactorEnabled: false,
+      twoFactorSecret: null, // Clear the secret for security
+    });
+
+    res.json({ message: "2FA disabled successfully" });
+  } catch (error) {
+    console.error("Error disabling 2FA:", error);
+    res.status(500).json({ message: "Error disabling 2FA" });
+  }
+};
+
+module.exports = { loginUser, createUser, me, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword, generateTwoFactorSecret, verifyTwoFactorSecret, verifyLoginTwoFactor, googleCallback, disableTwoFactor };

@@ -11,6 +11,7 @@ const {
   generateTwoFactorSecret,
   verifyTwoFactorSecret,
   verifyLoginTwoFactor,
+  disableTwoFactor,
 } = require("../controllers/authController");
 const authMiddleware = require("../middleware/authMiddleware");
 const passport = require("passport");
@@ -40,6 +41,7 @@ router.post('/resetpassword/:id/:token', resetPassword);
 // --- Two-Factor Authentication Routes ---
 router.post('/2fa/setup', authMiddleware(), generateTwoFactorSecret);
 router.post('/2fa/verify', authMiddleware(), verifyTwoFactorSecret);
+router.post('/2fa/disable', authMiddleware(), disableTwoFactor);
 router.post('/2fa/login', verifyLoginTwoFactor);
 
 // --- Google OAuth Routes ---

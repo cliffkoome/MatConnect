@@ -20,6 +20,9 @@ require('./config/passport'); // Import the passport configuration
 
 // Routes
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/eta", require("./routes/etaRoutes"));
+app.use("/api/stages", require("./routes/stageRoutes"));
+app.use("/api/admin", require("./routes/adminRoutes"));
 
 // Sync DB & Start Server
 syncDB().then(() => {
