@@ -62,8 +62,8 @@ a {
 }
 
 .main-nav a:hover,
-.main-nav a:first-child {
-  color: var(--gray-900);
+.main-nav a:nth-child(2) {
+  color: var(--primary);
 }
 
 .main-nav a:hover {

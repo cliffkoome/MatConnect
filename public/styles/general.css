@@ -14,13 +14,14 @@
   --gray-200: #e5e7eb;
   --gray-400: #9ca3af;
   --gray-500: #6b7280;
+  --gray-600: #4b5563;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Public Sans', sans-serif;
   color: var(--foreground-light);
 }
 
@@ -56,16 +57,19 @@ body {
 
 .header-links a{
   text-decoration: none;
-  font-size: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.2s;
 }
 
 .header-links a:hover {
   cursor: pointer;
-  text-decoration: underline;
+  color: var(--primary);
 }
 
 .header-buttons {
-  width: 15vw;
+  width: fit-content;
   height: 100%;
   display: flex;
   align-items: center;
