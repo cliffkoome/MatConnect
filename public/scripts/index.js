@@ -42,8 +42,9 @@ if (accessToken && role) {
       if (data && data.id) {
         console.log('Logged in as:', role);
         headerButtonsDiv.innerHTML = `
-          <span>Welcome, ${data.name}!</span>
-          <button class="logout primary-btn btn-2">Logout</button>
+          <button class="logout primary-btn btn-2">
+            <i class="fa-solid fa-right-from-bracket">
+          </i></button>
         `;
         const logoutBtn = document.querySelector('.logout');
         logoutBtn.addEventListener('click', () => {
