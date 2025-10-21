@@ -17,6 +17,7 @@
 }
 
 body {
+  font-family: 'Public Sans', sans-serif;
   background-color: var(--background-light);
   color: var(--foreground-light);
 }
@@ -25,7 +26,7 @@ body {
   display: flex;
   flex-direction: column;
   height: fit-content;
-  width: 100vw;
+  width: 100%;
   align-items: center;
 }
 
