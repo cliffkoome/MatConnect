@@ -5,38 +5,41 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Profile</title>
+  <link rel="stylesheet" href="./styles/main.css" />
   <link rel="stylesheet" href="./styles/user-profile.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
   <script src="./scripts/user-profile.js" defer></script>
 </head>
 
-<body class="dark">
+<body>
   <div class="page-wrapper">
     <header class="site-header">
       <div class="container">
         <div class="header-content">
-          <div class="logo" onclick="window.location.href='index.html'">
-            <h1>MatConnect</h1>
+          <div class="logo">
+            <a class="logo" href="index.html">MatConnect</a>
           </div>
+          <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="select-stage.html">Stages</a>
+            <a href="user-profile.html" class="active">Profile</a>
+          </nav>
           <div class="header-actions">
-            <button class="icon-button">
-              <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z">
-                </path>
-              </svg>
+            <button class="icon-button primary-btn btn-2" id="logout-btn" title="Logout">
+              <i class="fa-solid fa-right-from-bracket"></i>
             </button>
-            <div class="avatar"
-              style='background-image: url("https://lh3.googleusercontent.com/a/ACg8ocK_3tC2kG-p_gl5aV_u3iY2-dss_t6c117vXoB09W2Y=s96-c");'>
+            <div class="avatar">
             </div>
           </div>
         </div>
       </div>
     </header>
-
-    <main class="container">
+    <main class="container main-content">
       <div class="profile-card">
         <div class="card-header">
           <h2>Profile</h2>
@@ -46,13 +49,10 @@
         <div class="profile-details-section">
           <div class="profile-picture-container">
             <div class="profile-picture">
-              <svg class="profile-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-                  stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
+              <img id="profile-img" alt="User profile picture" />
             </div>
+            <!-- <button class="btn btn-secondary" id="upload-btn">Change Picture</button>
+            <input type="file" id="file-input" accept="image/*" class="hidden" /> -->
           </div>
           <form class="form-grid">
             <div class="form-group">
@@ -75,24 +75,59 @@
 
         <hr class="divider" />
 
-        <!-- <div class="password-reset-section">
+        <div class="two-factor-section">
+          <h3>Two-Factor Authentication (2FA)</h3>
+          <div class="two-factor-content">
+            <div class="form-group">
+              <p>
+                Status: <span id="2fa-status" class="status-badge">Loading...</span>
+              </p>
+              <p class="description">
+                Add an extra layer of security to your account by requiring a second verification step when you sign in.
+              </p>
+            </div>
+            <div class="form-group"><button class="btn btn-secondary" id="2fa-toggle-btn">Enable 2FA</button></div>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="password-reset-section">
           <h3>Password Reset</h3>
-          <form class="form-grid">
-            <div class="form-group">
-              <label for="new_password">New Password</label>
-              <input class="form-input" id="new_password" placeholder="Enter new password" type="password" />
-            </div>
-            <div class="form-group">
-              <label for="confirm_password">Confirm New Password</label>
-              <input class="form-input" id="confirm_password" placeholder="Confirm new password" type="password" />
-            </div>
-            <div class="form-actions">
-              <button class="btn btn-secondary" type="submit">Reset Password</button>
-            </div>
-          </form>
-        </div> -->
+          <p class="description" style="margin-bottom: 1rem;">To change your password, please use the "Forgot Password"
+            link on the login page.</p>
+          <a href="/forgot-password.html" class="btn btn-secondary">Go to Password Reset</a>
+        </div>
       </div>
     </main>
+
+    <!-- 2FA Setup Modal -->
+    <div class="modal-overlay hidden" id="2fa-modal">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h3>Set Up Two-Factor Authentication</h3>
+          <button class="icon-button" id="2fa-close-modal-btn">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </header>
+        <div class="modal-body" id="2fa-modal-body">
+          <p>Scan the QR code below with your authenticator app (like Google Authenticator or Authy), then enter the
+            6-digit code to verify.</p>
+          <div class="qr-code-container" id="qr-code-container">
+            <!-- QR Code will be inserted here -->
+          </div>
+          <div class="form-group">
+            <label for="2fa-verify-token">Verification Code</label>
+            <input type="text" id="2fa-verify-token" class="form-input" placeholder="Enter 6-digit code"
+              maxlength="6" />
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="2fa-cancel-btn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="2fa-verify-btn">Verify & Enable</button>
+        </footer>
+      </div>
+    </div>
   </div>
 </body>
 
