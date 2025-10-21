@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feedback</title>
+    <link rel="stylesheet" href="styles/feedback-page.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+</head>
+<body>
+    <div class="page-wrapper">
+        <header class="site-header">
+            <div class="container header-content">
+                <div class="logo">
+                    <svg class="logo-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
+                    </svg>
+                    <h1>Ma3Route Feedback</h1>
+                </div>
+                <nav class="main-nav">
+                    <a href="#">Home</a>
+                    <a href="#">Schedule</a>
+                    <a href="#">Profile</a>
+                </nav>
+                <button class="mobile-menu-btn">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="feedback-card">
+                <div class="card-header">
+                    <h2>Your Feedback Matters</h2>
+                    <p>Help us improve your matatu experience. Share your thoughts on your recent ride.</p>
+                </div>
+                <form class="feedback-form">
+                    <div class="form-group">
+                        <label for="rating">Rate Your Experience</label>
+                        <fieldset class="rating-stars">
+                            <input type="radio" id="star5" name="rating" value="5" /><label for="star5">star</label>
+                            <input type="radio" id="star4" name="rating" value="4" /><label for="star4">star</label>
+                            <input type="radio" id="star3" name="rating" value="3" /><label for="star3">star</label>
+                            <input type="radio" id="star2" name="rating" value="2" /><label for="star2">star</label>
+                            <input type="radio" id="star1" name="rating" value="1" /><label for="star1">star</label>
+                        </fieldset>
+                    </div>
+                    <div class="form-group">
+                        <label for="comments">Your Comments</label>
+                        <textarea id="comments" name="comments" class="form-textarea" placeholder="Tell us more about what you liked or what could be better..." rows="4"></textarea>
+                    </div>
+                    <button class="btn" type="submit">Submit Feedback</button>
+                </form>
+            </div>
+        </main>
+
+        <footer class="site-footer">
+            <p>© 2025 Ma3Route. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
