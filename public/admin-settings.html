@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Settings</title>
+    <link rel="stylesheet" href="styles/admin-settings.css" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+</head>
+<body>
+    <div class="page-wrapper">
+        <header class="site-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                        <path clip-rule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fill-rule="evenodd"></path>
+                        <path clip-rule="evenodd" d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor" fill-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <h2>Matatu Admin</h2>
+            </div>
+            <nav class="main-nav">
+                <a href="#">Dashboard</a>
+                <a href="#">Routes</a>
+                <a href="#">Stages</a>
+                <a href="#">Devices</a>
+            </nav>
+            <div class="avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAIe8sXVA-ox0_zQ966gA7WM8WgsEfFh-DqQMnB2grKR3C61jSOJ4j9eYIP2VgM34wVwcz1IDg_5SyBny_SYeysxD3YZnmmYbEBzRmKTLTTyIAoiJuiZiReYwocRzgE1l1Laj8Oz5kC_ajUYFmcsW3SP7FHQ8QmJClhKneoWsux98_ZxNe1Z0UZ6mLv3sqRBECfcPrM56TZTa_LO61WcPpdpNo4hZ7P7CQ5dNz-1C7yC64R6MQqIYizIZSqh6M62o4Cn4KygBrXfA4");'></div>
+        </header>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Settings</h1>
+                <p>Manage your routes, stages, and devices.</p>
+            </div>
+
+            <div class="tabs">
+                <input type="radio" name="tabs" id="tab-routes" checked />
+                <label for="tab-routes">Routes</label>
+                <div class="tab-panel">
+                    <section>
+                        <header class="panel-header">
+                            <h3>Manage Routes</h3>
+                            <button class="btn"><span class="material-symbols-outlined">add</span>Add Route</button>
+                        </header>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Route Name</th>
+                                        <th>Start Stage</th>
+                                        <th>End Stage</th>
+                                        <th class="text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Route 1</td>
+                                        <td>Stage A</td>
+                                        <td>Stage B</td>
+                                        <td class="text-right"><a href="#">Edit</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Route 2</td>
+                                        <td>Stage C</td>
+                                        <td>Stage D</td>
+                                        <td class="text-right"><a href="#">Edit</a></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <input type="radio" name="tabs" id="tab-stages" />
+                <label for="tab-stages">Stages</label>
+                <div class="tab-panel">
+                    <section>
+                        <header class="panel-header">
+                            <h3>Manage Stages</h3>
+                            <button class="btn"><span class="material-symbols-outlined">add</span>Add Stage</button>
+                        </header>
+                         <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Stage Name</th>
+                                        <th>Location</th>
+                                        <th class="text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Stage A</td>
+                                        <td>Location 1</td>
+                                        <td class="text-right"><a href="#">Edit</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Stage B</td>
+                                        <td>Location 2</td>
+                                        <td class="text-right"><a href="#">Edit</a></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <input type="radio" name="tabs" id="tab-devices" />
+                <label for="tab-devices">Devices</label>
+                <div class="tab-panel">
+                    <section>
+                        <header class="panel-header">
+                            <h3>Manage Devices</h3>
+                            <button class="btn"><span class="material-symbols-outlined">add</span>Add Device</button>
+                        </header>
+                         <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Device ID</th>
+                                        <th>Status</th>
+                                        <th class="text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Device 1</td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                        <td class="text-right"><a href="#">Edit</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Device 2</td>
+                                        <td><span class="badge badge-danger">Inactive</span></td>
+                                        <td class="text-right"><a href="#">Edit</a></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
