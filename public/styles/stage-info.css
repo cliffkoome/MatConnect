@@ -1,0 +1,252 @@
+/* ------------------- */
+/* Variables & Globals */
+/* ------------------- */
+:root {
+  --primary: #137fec;
+  --background-light: #f6f7f8;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --white: #ffffff;
+  --green-100: #dcfce7;
+  --green-500: #22c55e;
+  --green-800: #166534;
+  --blue-100: #dbeafe;
+  --blue-500: #3b82f6;
+  --blue-800: #1e40af;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Public Sans", sans-serif;
+  background-color: var(--background-light);
+  color: var(--gray-800);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header & Navigation */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: rgba(246, 247, 248, 0.8);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid rgba(19, 127, 236, 0.2);
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem;
+}
+
+.logo, .header-actions, .vehicle-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo .material-symbols-outlined {
+  color: var(--primary);
+  font-size: 2rem;
+}
+.logo h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.main-nav {
+  display: none; /* Hidden on mobile */
+  gap: 1.5rem;
+}
+.main-nav a {
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: inherit;
+  transition: color 0.2s;
+}
+.main-nav a:hover {
+  color: var(--primary);
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.icon-button:hover { background-color: rgba(19, 127, 236, 0.2); }
+
+.avatar {
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* Main Content */
+main {
+  flex-grow: 1;
+  padding: 2rem 0;
+}
+.page-header {
+  margin-bottom: 2rem;
+  max-width: 896px;
+  margin: 0 auto 2rem;
+}
+.page-header h2 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.page-header p {
+  color: var(--gray-500);
+  margin-top: 0.5rem;
+}
+
+.card {
+  max-width: 896px;
+  margin: 0 auto;
+  background-color: var(--background-light);
+  border: 1px solid rgba(19, 127, 236, 0.2);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.arrival-card .card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(19, 127, 236, 0.2);
+}
+
+.card-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.arrival-list { list-style: none; }
+.arrival-list li:not(:last-child) {
+  border-bottom: 1px solid rgba(19, 127, 236, 0.2);
+}
+
+.arrival-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  transition: background-color 0.2s;
+}
+.arrival-item:hover { background-color: rgba(19, 127, 236, 0.1); }
+
+.vehicle-icon-wrapper {
+  background-color: rgba(19, 127, 236, 0.2);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--primary);
+}
+
+.plate-number { font-weight: 600; }
+.eta {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+}
+.status-at-stage { background-color: var(--green-100); color: var(--green-800); }
+.status-at-stage .status-dot { background-color: var(--green-500); }
+
+.status-arrived { background-color: var(--green-100); color: var(--green-800); }
+.status-arrived .status-dot { background-color: var(--green-500); }
+
+.status-approaching { background-color: var(--blue-100); color: var(--blue-800); }
+.status-approaching .status-dot { background-color: var(--blue-500); }
+
+/* Feedback Card */
+.feedback-card {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.feedback-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+.feedback-card p {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin: 0.25rem 0 1rem;
+}
+
+.btn {
+  background-color: var(--primary);
+  color: var(--white);
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn:hover { background-color: #106ac4; }
+
+/* Footer */
+.site-footer {
+  margin-top: 2rem;
+  border-top: 1px solid rgba(19, 127, 236, 0.2);
+}
+.site-footer .container {
+  padding: 1rem 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .main-nav { display: flex; }
+}

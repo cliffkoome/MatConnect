@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matatu Arrival System</title>
+    <link rel="stylesheet" href="styles/stage-info.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="./scripts/stage-info.js" defer></script>
+</head>
+<body class="dark">
+    <div class="page-wrapper">
+        <header class="site-header">
+            <nav class="container navbar">
+                <div class="logo">
+                    <span class="material-symbols-outlined">directions_bus</span>
+                    <h1>Matatu Tracker</h1>
+                </div>
+                <div class="main-nav">
+                    <a href="index.html">Home</a>
+                    <a href="select-stage.html">Stages</a>
+                    <a href="#">Routes</a>
+                    <a href="#">About</a>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-button">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <img alt="User Avatar" class="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-QtCxHRcJw03kVrW6lFUkrsbAicK0R7PFkju9bU2CKy94BirNK_nuUQw50CFTkQS9LNoPNbMjXEOjs2olx_0rHTSVL9rbHQGvfPzU0NuVaql5tHXihi-iCP5YyanMhH42sMHCNfZe1kipmnGbfMjEIV02HijIH6i0_vmtJOlnGdUpDFsHXZL_90ucMAUJ9HlROYk06hxBm88Kh3gRpwaeKFdKH9ZsvzPo7s_0RQ3v1Z5uF5xumHKOszizQ7fvgTVq7hkkrUGJmNY" />
+                </div>
+            </nav>
+        </header>
+
+        <main class="container">
+            <div class="page-header">
+                <h2>Kenyatta Avenue Stage</h2>
+                <p>Real-time arrivals for your next ride.</p>
+            </div>
+
+            <div class="card arrival-card" id="arrival-card">
+                <div class="card-header">
+                    <h3>Upcoming Matatus</h3>
+                </div>
+                <ul class="arrival-list">
+                    <li class="arrival-item">
+                        <div class="vehicle-info">
+                            <div class="vehicle-icon-wrapper">
+                                <p>Loading arrival times...</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card feedback-card">
+                <h3>Passenger Feedback</h3>
+                <p>Help us improve your experience.</p>
+                <button class="btn btn-primary">
+                    <span class="material-symbols-outlined">qr_code_scanner</span>
+                    Scan to Give Feedback
+                </button>
+            </div>
+        </main>
+
+        <footer class="site-footer">
+            <div class="container">
+                <p>© 2025 Matatu Tracker. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
