@@ -10,9 +10,22 @@ const Vehicle = sequelize.define("Vehicle", {
   carId: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
   },
-  plateNumber: { type: DataTypes.STRING, allowNull: false, unique: true },
-});
+  plateNumber: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+}, {
+  indexes: [
+    // Create a unique index on carId
+    { unique: true, fields: ['carId'] },
+    // Create a unique index on plateNumber
+    { unique: true, fields: ['plateNumber'] }
+  ]
+})
+
+// Note: The above is the standard way to define indexes. If you still face issues,
+// you could try a composite unique index on both fields if that fits your logic:
+// { unique: true, fields: ['carId', 'plateNumber'] }
 
 module.exports = Vehicle;

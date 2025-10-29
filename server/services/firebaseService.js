@@ -16,6 +16,7 @@ try {
 
 const db = admin.database();
 const locationsRef = db.ref('locations');
+const etasRef = db.ref('etas');
 
 /**
  * Fetches the real-time location data for a specific vehicle.
@@ -27,4 +28,14 @@ const getVehicleLocation = async (carId) => {
   return snapshot.val();
 };
 
-module.exports = { getVehicleLocation };
+/**
+ * Updates the ETA data for a specific stage in Firebase.
+ * @param {string} stageId - The ID of the stage.
+ * @param {object} etas - The ETA data object to be stored.
+ * @returns {Promise<void>}
+ */
+const updateStageEtas = async (stageId, etas) => {
+  await etasRef.child(stageId).set(etas);
+};
+
+module.exports = { getVehicleLocation, updateStageEtas };

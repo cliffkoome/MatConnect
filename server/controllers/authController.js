@@ -139,7 +139,15 @@ const me = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(user);
+    // Convert to a plain object to add custom properties
+    const userObject = user.get({ plain: true });
+
+    // Add a flag to indicate if the user is a Google user
+    userObject.isGoogleUser = !!user.googleId;
+    // Don't send the googleId itself to the client
+    delete userObject.googleId;
+
+    res.status(200).json(userObject);
   } catch (error) {
     console.error("Error fetching user data:", error);
     res
@@ -147,6 +155,39 @@ const me = async (req, res) => {
       .json({ message: "Error fetching user data", error: error.message });
   }
 };
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, phoneNumber } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const fieldsToUpdate = {};
+    if (name) {
+      fieldsToUpdate.name = name;
+    }
+
+    // Normalize and validate phone number if provided
+    if (phoneNumber !== undefined) {
+      // Basic validation and normalization (can be improved)
+      let normalizedPhone = phoneNumber.replace(/\s+/g, ''); // remove spaces
+      if (normalizedPhone.startsWith('07')) {
+        normalizedPhone = `+254${normalizedPhone.substring(1)}`;
+      }
+      fieldsToUpdate.phoneNumber = normalizedPhone;
+    }
+
+    await user.update(fieldsToUpdate);
+
+    res.status(200).json({ message: "Profile updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating profile", error: error.message });
+  }
+}
 
 const requestPasswordReset = async (req, res, next) => {
   const { email } = req.body;
@@ -360,4 +401,4 @@ const disableTwoFactor = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, createUser, me, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword, generateTwoFactorSecret, verifyTwoFactorSecret, verifyLoginTwoFactor, googleCallback, disableTwoFactor };
+module.exports = { loginUser, createUser, me, updateProfile, refreshAccessToken, logoutUser, requestPasswordReset, resetPassword, generateTwoFactorSecret, verifyTwoFactorSecret, verifyLoginTwoFactor, googleCallback, disableTwoFactor };

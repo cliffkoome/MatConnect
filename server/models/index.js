@@ -8,6 +8,11 @@ const Vehicle = require('./Vehicle');
 Stage.belongsToMany(Vehicle, { through: 'StageVehicles' });
 Vehicle.belongsToMany(Stage, { through: 'StageVehicles' });
 
+// A User can subscribe to many stages for alerts, and a Stage can have many subscribers.
+// This creates a join table `UserStageSubscriptions`
+User.belongsToMany(Stage, { through: 'UserStageSubscriptions', as: 'AlertSubscriptions' });
+Stage.belongsToMany(User, { through: 'UserStageSubscriptions', as: 'Subscribers' });
+
 
 const syncDB = async () => {
   try {
