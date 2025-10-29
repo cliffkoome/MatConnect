@@ -6,7 +6,7 @@ const User = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     name: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, unique: true, allowNull: false },
+    email: { type: DataTypes.STRING, allowNull: false },
     password: {
       type: DataTypes.STRING,
       allowNull: true // Allow null for Google-based signups
@@ -17,7 +17,10 @@ const User = sequelize.define(
     },
     googleId: {
       type: DataTypes.STRING,
-      unique: true,
+      allowNull: true,
+    },
+    phoneNumber: {
+      type: DataTypes.STRING,
       allowNull: true,
     },
     profilePictureUrl: {
