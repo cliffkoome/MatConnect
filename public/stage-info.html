@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,29 +8,33 @@
     <link rel="stylesheet" href="styles/stage-info.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
     <script src="./scripts/stage-info.js" defer></script>
 </head>
+
 <body class="dark">
     <div class="page-wrapper">
         <header class="site-header">
             <nav class="container navbar">
                 <div class="logo">
-                    <span class="material-symbols-outlined">directions_bus</span>
-                    <h1>Matatu Tracker</h1>
+                    <h1>MatConnect</h1>
                 </div>
                 <div class="main-nav">
                     <a href="index.html">Home</a>
                     <a href="select-stage.html">Stages</a>
-                    <a href="#">Routes</a>
                     <a href="#">About</a>
                 </div>
                 <div class="header-actions">
-                    <button class="icon-button">
-                        <span class="material-symbols-outlined">notifications</span>
+                    <button class="icon-button" id="notification-bell" title="Toggle SMS Alerts">
+                        <span class="material-symbols-outlined">notifications_off</span>
                     </button>
-                    <img alt="User Avatar" class="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-QtCxHRcJw03kVrW6lFUkrsbAicK0R7PFkju9bU2CKy94BirNK_nuUQw50CFTkQS9LNoPNbMjXEOjs2olx_0rHTSVL9rbHQGvfPzU0NuVaql5tHXihi-iCP5YyanMhH42sMHCNfZe1kipmnGbfMjEIV02HijIH6i0_vmtJOlnGdUpDFsHXZL_90ucMAUJ9HlROYk06hxBm88Kh3gRpwaeKFdKH9ZsvzPo7s_0RQ3v1Z5uF5xumHKOszizQ7fvgTVq7hkkrUGJmNY" />
+                    <button class="icon-button primary-btn btn-2" id="logout-btn" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                    <img alt="User Avatar" class="avatar" src="images/pfp.jpg" />
                 </div>
             </nav>
         </header>
@@ -49,7 +54,7 @@
                         <div class="vehicle-info">
                             <div class="vehicle-icon-wrapper">
                                 <p>Loading arrival times...</p>
-                        </div>
+                            </div>
                     </li>
                 </ul>
             </div>
@@ -71,4 +76,5 @@
         </footer>
     </div>
 </body>
+
 </html>
