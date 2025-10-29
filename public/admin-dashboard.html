@@ -1,120 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Matatu Admin Dashboard</title>
-  <link rel="stylesheet" href="styles/manage-stages.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>Admin Dashboard - MatConnect</title>
+  <link rel="stylesheet" href="styles/admin-dashboard.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <script src="./scripts/admin-dashboard.js" defer></script>
 </head>
+
 <body>
   <div class="page-wrapper">
     <header class="site-header">
-      <nav class="container navbar">
-        <div class="logo">
-          <span class="material-symbols-outlined">shield_person</span>
-          <h1>Matatu Admin</h1>
-        </div>
-        <div class="main-nav">
-          <a href="/admin-dashboard.html" class="active">Dashboard</a>
-          <a href="/manage-stages.html">Stages & Vehicles</a>
-          <a href="#">Users</a>
-        </div>
+      <div class="header-container">
+        <a href="/admin-dashboard.html" class="logo">MatConnect</a>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="/admin-dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="/manage-stages.html">Stages & Vehicles</a></li>
+          </ul>
+        </nav>
         <div class="header-actions">
-          <button class="icon-button" id="logout-btn" title="Logout">
-            <span class="material-symbols-outlined">logout</span>
-          </button>
-          <img alt="User Avatar" class="avatar" id="user-avatar" />
+          <div class="user-menu">
+            <button class="user-menu-btn">
+              <img alt="User Avatar" class="avatar" id="user-avatar" />
+              <span class="user-name">Admin</span>
+              <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </button>
+            <div class="user-menu-dropdown">
+              <a href="#" id="logout-link-desktop">Logout</a>
+            </div>
+          </div>
+          <button class="mobile-menu-btn"><span class="material-symbols-outlined">menu</span></button>
         </div>
-      </nav>
+      </div>
     </header>
 
     <main class="dashboard-container">
+      <header class="dashboard-header">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome back! Here's an overview of the system.</p>
+      </header>
+
+      <!-- Stats Cards -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon-wrapper icon-blue">
+            <span class="material-symbols-outlined">directions_bus</span>
+          </div>
+          <div class="stat-info">
+            <p>Total Vehicles</p>
+            <span id="total-vehicles-stat">--</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon-wrapper icon-green">
+            <span class="material-symbols-outlined">signal_cellular_alt</span>
+          </div>
+          <div class="stat-info">
+            <p>Online Vehicles</p>
+            <span id="online-vehicles-stat">--</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon-wrapper icon-orange">
+            <span class="material-symbols-outlined">pin_drop</span>
+          </div>
+          <div class="stat-info">
+            <p>Configured Stages</p>
+            <span id="total-stages-stat">--</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Content Grid -->
       <div class="dashboard-grid">
         <section class="grid-main">
           <div class="panel">
-                        <div class="card-header">
-                            <h3>Vehicles</h3>
-                            <a href="#" class="btn">View All</a>
-                        </div>
-                        <div class="table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Plate Number</th>
-                                        <th>Route</th>
-                                        <th>Status</th>
-                                        <th>Location</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Vehicle data will be dynamically inserted here -->
-                                    <tr><td colspan="4">Loading vehicle data...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-          <div class="panel feedback-card">
-            <h3>Recent Passenger Feedback</h3>
-                        <div class="feedback-item">
-                            <img alt="User Avatar" class="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvVkOAFlYF6Ncp8958ARyIa7hTGRon8JgNBTCM98ddo51yUc4Ell2X6crfBSpZzBXIFXrhVuxZ5W9ILHwEetSC1ZdQ5tyGLacoC6Jbk6NSpSEd1xUwDuS2nuRg1_POgkeGkMt_68dmN3aHfA4_PnFJqw1oXvztunimJr9f0GqfM88njLQR1CHRV4FD8BRB-7NdRM2DvErjxJ9FctRpyvjGdAWbiql_dohvVQm1bWVIsyteG0qoisqRPkQRtHCmYOz3QLBZGfZk6-Y" />
-                            <div class="feedback-body">
-                                <div class="feedback-meta">
-                                    <p>Sarah W.</p>
-                                    <time>2 days ago</time>
-                                </div>
-                                <div class="star-rating">
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined">star</span>
-                                </div>
-                                <p class="feedback-comment">Great service, the ETA was spot on!</p>
-                            </div>
-                        </div>
-                        <div class="feedback-item">
-                             <img alt="User Avatar" class="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3Ks3n25XhD6B0hzs7x5j9x5dHHw9DY1TK1uwKdN_D2fGreEXq3fffsYJ1nL6_dqmdzdsJ0WYgQlylxOUPYHcLQLpqFkSTOXIsmoOnDzsHUc3zlXXfP647VcuPn4h9VGHePQ0gnRiC_e-0ivOTVJmcDyz-gtv09CaPoaMB_2Eq9s_W1z_LZ7dUxwp65uWVj3mfVqaGrJzqlCF5Y4RmYZE7eMlJzvtzSq4nmjy_x4d5dL8K6HKxm39mMOobIaZaw_IG-_vR1Qu2Mio" />
-                            <div class="feedback-body">
-                                <div class="feedback-meta">
-                                    <p>David M.</p>
-                                    <time>3 days ago</time>
-                                </div>
-                                <div class="star-rating">
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined">star</span>
-                                    <span class="material-symbols-outlined star-empty">star</span>
-                                </div>
-                                <p class="feedback-comment">The app is helpful, but the ETA could be more accurate sometimes.</p>
-                            </div>
-                        </div>
-                    </div>
+            <div class="card-header">
+              <h3>Live Vehicle Status</h3>
+              <a href="#" class="btn">View All</a>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Vehicle</th>
+                    <th>Route</th>
+                    <th>Status</th>
+                    <th>Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Vehicle data will be dynamically inserted here -->
+                  <tr><td colspan="4">Loading vehicle data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
 
         <aside class="grid-sidebar">
-          <div class="panel stat-card">
-            <h4>ETA Accuracy Logs</h4>
-            <div class="stat-content">
-              <div class="stat-details">
-                <span>Average Accuracy</span>
-                <span class="stat-value">95%</span>
-              </div>
-              <span class="material-symbols-outlined stat-icon">rule</span>
-            </div>
-          </div>
-          <div class="panel stat-card">
-            <h4>System Health</h4>
-            <div class="stat-content">
-              <div class="stat-details">
-                <span>Connected Devices</span>
-                <span class="stat-value">150</span>
-              </div>
-              <span class="material-symbols-outlined stat-icon">router</span>
+          <div class="panel">
+            <h3>Recent Feedback</h3>
+            <div id="feedback-list">
+              <!-- Feedback items will be dynamically inserted here -->
+              <p>Loading feedback...</p>
             </div>
           </div>
         </aside>
@@ -122,4 +116,5 @@
     </main>
   </div>
 </body>
+
 </html>

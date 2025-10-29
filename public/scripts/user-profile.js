@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- DOM Elements ---
   const profileForm = document.querySelector('.profile-details-section .form-grid');
   const passwordForm = document.querySelector('.password-reset-section .form-grid');
-  const logoutBtn = document.getElementById('logout-btn');
 
   // 2FA Elements
   const twoFaStatus = document.getElementById('2fa-status');
@@ -13,6 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const twoFaVerifyBtn = document.getElementById('2fa-verify-btn');
   const qrCodeContainer = document.getElementById('qr-code-container');
   const twoFaTokenInput = document.getElementById('2fa-verify-token');
+
+  // Section Elements
+  const twoFaSection = document.getElementById('2fa-section');
+  const passwordResetSection = document.getElementById('password-reset-section');
+  const logoutBtn = document.getElementById('logout-btn');
 
   // --- State ---
   const token = localStorage.getItem('accessToken');
@@ -54,162 +58,166 @@ document.addEventListener('DOMContentLoaded', () => {
   if (twoFaVerifyBtn) {
     twoFaVerifyBtn.addEventListener('click', () => handle2FaVerify(token));
   }
-});
 
-/**
- * Generic API fetch helper
- */
-async function apiFetch(url, options) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'An API error occurred');
+  /**
+   * Generic API fetch helper
+   */
+  async function apiFetch(url, options) {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'An API error occurred');
+    }
+    return response.json();
+  };
+
+  /**
+   * Fetches user data from the server and populates the form.
+   * @param {string} token The JWT access token.
+   */
+  async function fetchUserProfile(token) {
+    try {
+      const user = await apiFetch('/api/auth/me/passenger', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      populateProfileForm(user);
+
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      alert('Could not load your profile. Please try logging in again.');
+    }
   }
-  return response.json();
-};
 
-/**
- * Fetches user data from the server and populates the form.
- * @param {string} token The JWT access token.
- */
-async function fetchUserProfile(token) {
-  try {
-    const user = await apiFetch('/api/auth/me/passenger', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-    });
-    populateProfileForm(user);
+  /**
+   * Fills the input fields with the user's data.
+   * @param {object} user The user object from the API.
+   */
+  function populateProfileForm(user) {
+    document.getElementById('name').value = user.name || '';
+    document.getElementById('email').value = user.email || '';
+    document.getElementById('phone').value = user.phoneNumber || '';
+    document.getElementById('profile-img').src = user.profilePictureUrl || './images/pfp.jpg';
+    document.querySelector('.avatar').style.backgroundImage = `url(${user.profilePictureUrl || './images/pfp.jpg'})`;
 
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-    alert('Could not load your profile. Please try logging in again.');
+    update2FaUI(user.twoFactorEnabled);
+
+    // Conditionally hide sections for Google users
+    if (user.isGoogleUser) {
+      if (twoFaSection) twoFaSection.style.display = 'none';
+      if (passwordResetSection) passwordResetSection.style.display = 'none';
+    }
   }
-}
 
-/**
- * Fills the input fields with the user's data.
- * @param {object} user The user object from the API.
- */
-function populateProfileForm(user) {
-  document.getElementById('name').value = user.name || '';
-  document.getElementById('email').value = user.email || '';
-  document.getElementById('phone').value = user.phoneNumber || '';
-  document.getElementById('profile-img').src = user.profilePictureUrl || './images/pfp.jpg';
-  document.querySelector('.avatar').style.backgroundImage = `url(${user.profilePictureUrl || './images/pfp.jpg'})`;
-    
-  update2FaUI(user.twoFactorEnabled);
-}
 
-/**
- * Handles the submission of the profile update form.
- * @param {Event} event The form submission event.
- * @param {string} token The JWT access token.
- */
-async function handleProfileUpdate(event, token) {
-  event.preventDefault();
-  const name = document.getElementById('name').value;
-  const email = document.getElementById('email').value;
-  const phone = document.getElementById('phone').value;
+  /**
+   * Handles the submission of the profile update form.
+   * @param {Event} event The form submission event.
+   * @param {string} token The JWT access token.
+   */
+  async function handleProfileUpdate(event, token) {
+    event.preventDefault();
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
 
-  // Note: You need to create this endpoint on your backend.
-  // Example: router.put('/api/users/me', authMiddleware, updateUser);
-  try {
-    await apiFetch('/api/users/me', {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phoneNumber: phone }),
-    });
+    try {
+      await apiFetch('/api/auth/me', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phoneNumber: phone }),
+      });
 
-    alert('Profile updated successfully!');
-  } catch (error) {
-    console.error('Profile update error:', error);
-    alert(`Error: ${error.message}`);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Profile update error:', error);
+      alert(`Error: ${error.message}`);
+    }
   }
-}
 
-/**
- * Handles the logic for enabling or disabling 2FA.
- * @param {string} token The JWT access token.
- */
-async function handle2FaToggle(token) {
-  const isEnabled = document.getElementById('2fa-status').classList.contains('enabled');
+  /**
+   * Handles the logic for enabling or disabling 2FA.
+   * @param {string} token The JWT access token.
+   */
+  async function handle2FaToggle(token) {
+    const isEnabled = document.getElementById('2fa-status').classList.contains('enabled');
 
-  if (isEnabled) {
-    // --- Disable 2FA ---
-    if (confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+    if (isEnabled) {
+      // --- Disable 2FA ---
+      if (confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+        try {
+          await apiFetch('/api/auth/2fa/disable', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          alert('2FA has been disabled.');
+          update2FaUI(false);
+        } catch (error) {
+          alert(`Error disabling 2FA: ${error.message}`);
+        }
+      }
+    } else {
+      // --- Enable 2FA ---
       try {
-        await apiFetch('/api/auth/2fa/disable', {
+        const data = await apiFetch('/api/auth/2fa/setup', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        alert('2FA has been disabled.');
-        update2FaUI(false);
+        document.getElementById('qr-code-container').innerHTML = `<img src="${data.qrCodeUrl}" alt="QR Code for 2FA" />`;
+        document.getElementById('2fa-modal').classList.remove('hidden');
       } catch (error) {
-        alert(`Error disabling 2FA: ${error.message}`);
+        alert(`Error setting up 2FA: ${error.message}`);
       }
     }
-  } else {
-    // --- Enable 2FA ---
+  }
+
+  /**
+   * Handles the verification of the 2FA token from the modal.
+   * @param {string} token The JWT access token.
+   */
+  async function handle2FaVerify(token) {
+    const twoFaCode = document.getElementById('2fa-verify-token').value;
+    if (!twoFaCode || twoFaCode.length !== 6) {
+      alert('Please enter a valid 6-digit code.');
+      return;
+    }
+
     try {
-      const data = await apiFetch('/api/auth/2fa/setup', {
+      await apiFetch('/api/auth/2fa/verify', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: twoFaCode }),
       });
-      document.getElementById('qr-code-container').innerHTML = `<img src="${data.qrCodeUrl}" alt="QR Code for 2FA" />`;
-      document.getElementById('2fa-modal').classList.remove('hidden');
+      alert('2FA enabled successfully!');
+      close2FaModal();
+      update2FaUI(true);
     } catch (error) {
-      alert(`Error setting up 2FA: ${error.message}`);
+      alert(`Verification failed: ${error.message}`);
     }
   }
-}
 
-/**
- * Handles the verification of the 2FA token from the modal.
- * @param {string} token The JWT access token.
- */
-async function handle2FaVerify(token) {
-  const twoFaCode = document.getElementById('2fa-verify-token').value;
-  if (!twoFaCode || twoFaCode.length !== 6) {
-    alert('Please enter a valid 6-digit code.');
-    return;
+  function close2FaModal() {
+    document.getElementById('2fa-modal').classList.add('hidden');
+    document.getElementById('qr-code-container').innerHTML = '';
+    document.getElementById('2fa-verify-token').value = '';
   }
 
-  try {
-    await apiFetch('/api/auth/2fa/verify', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: twoFaCode }),
-    });
-    alert('2FA enabled successfully!');
-    close2FaModal();
-    update2FaUI(true);
-  } catch (error) {
-    alert(`Verification failed: ${error.message}`);
+  function update2FaUI(isEnabled) {
+    const statusEl = document.getElementById('2fa-status');
+    const toggleBtn = document.getElementById('2fa-toggle-btn');
+    statusEl.textContent = isEnabled ? 'Enabled' : 'Disabled';
+    statusEl.className = `status-badge ${isEnabled ? 'enabled' : 'disabled'}`;
+    toggleBtn.textContent = isEnabled ? 'Disable 2FA' : 'Enable 2FA';
   }
-}
 
-function close2FaModal() {
-  document.getElementById('2fa-modal').classList.add('hidden');
-  document.getElementById('qr-code-container').innerHTML = '';
-  document.getElementById('2fa-verify-token').value = '';
-}
-
-function update2FaUI(isEnabled) {
-  const statusEl = document.getElementById('2fa-status');
-  const toggleBtn = document.getElementById('2fa-toggle-btn');
-  statusEl.textContent = isEnabled ? 'Enabled' : 'Disabled';
-  statusEl.className = `status-badge ${isEnabled ? 'enabled' : 'disabled'}`;
-  toggleBtn.textContent = isEnabled ? 'Disable 2FA' : 'Enable 2FA';
-}
-
-/**
- * Logs the user out by clearing the token and redirecting.
- */
-async function logoutUser() {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('role');
-  window.location.href = '/login.html';
-}
+  /**
+   * Logs the user out by clearing the token and redirecting.
+   */
+  async function logoutUser() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('role');
+    window.location.href = '/login.html';
+  }
+});

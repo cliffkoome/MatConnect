@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MatConnect - Select Stage</title>
     <link rel="stylesheet" href="./styles/select-stage.css">
-    <link rel="stylesheet" href="./styles/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
     <script src="./scripts/select-stage.js" defer></script>
 </head>
 
@@ -19,12 +20,20 @@
         <div class="container nav-container">
             <a class="logo" href="index.html">MatConnect</a>
             <nav class="main-nav">
-                <a href="index.html">Home</a>
-                <a href="select-stage.html">Stages</a>
-                <a href="feedback-page.html">Feedback</a>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="select-stage.html" class="active">Stages</a></li>
+                    <li><a href="feedback-page.html">Feedback</a></li>
+                </ul>
             </nav>
-            <div class="user-profile">
-                <img alt="User profile picture" class="profile-icon" src="./images/pfp.jpg" onclick="location='user-profile.html'">
+            <div class="header-actions">
+                <div class="user-profile">
+                    <img alt="User profile picture" class="profile-icon" src="./images/pfp.jpg"
+                        onclick="location='user-profile.html'">
+                </div>
+                <button class="mobile-menu-btn">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
             </div>
         </div>
     </header>

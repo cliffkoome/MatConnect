@@ -9,8 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailsFooter = document.getElementById('details-footer');
 
   // Header elements
-  const logoutBtn = document.getElementById('logout-btn');
-  const userAvatar = document.getElementById('user-avatar');
+  const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+  const mainNav = document.querySelector('.main-nav');
+  const userMenu = document.querySelector('.user-menu');
+  const logoutLinkDesktop = document.getElementById('logout-link-desktop');
 
   // Stage Modal Elements
   const addStageBtn = document.getElementById('add-stage-btn');
@@ -250,20 +252,34 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // --- Mobile Menu Toggle ---
+    mobileMenuBtn.addEventListener('click', () => {
+      mainNav.classList.toggle('is-active');
+    });
+
+    // --- Desktop User Menu Toggle ---
+    if (userMenu) {
+      userMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userMenu.classList.toggle('is-active');
+      });
+    }
+
+    // --- Add Logout Links ---
+    const navList = mainNav.querySelector('ul');
+    const logoutLi = document.createElement('li');
+    logoutLi.innerHTML = `<a href="#" class="logout-link">Logout</a>`;
+    navList.appendChild(logoutLi);
+    logoutLi.querySelector('.logout-link').addEventListener('click', logoutUser);
+    logoutLinkDesktop.addEventListener('click', logoutUser);
+
     // Add event listeners
     addStageForm.addEventListener('submit', handleAddStage);
     addVehicleForm.addEventListener('submit', handleAddVehicle);
-    assignVehicleBtn.addEventListener('click', handleAssignVehicle);
-    logoutBtn.addEventListener('click', logoutUser);
+    assignVehicleBtn.addEventListener('click', handleAssignVehicle);    
 
     // Initial data fetch
     try {
-      // Fetch user data for the header, then stages and vehicles
-      const user = await apiFetch('/api/auth/me/admin');
-      if (user && user.profilePictureUrl) {
-        userAvatar.src = user.profilePictureUrl;
-      }
-
       const [stagesData, vehiclesData] = await Promise.all([
         apiFetch('/api/admin/stages'),
         apiFetch('/api/admin/vehicles'),
@@ -276,6 +292,13 @@ document.addEventListener('DOMContentLoaded', () => {
       stageList.innerHTML = `<p class="error-message">Failed to load data: ${error.message}</p>`;
     }
   };
+
+  // Close user menu when clicking outside
+  document.addEventListener('click', () => {
+    if (userMenu && userMenu.classList.contains('is-active')) {
+      userMenu.classList.remove('is-active');
+    }
+  });
 
   initializeApp();
 });
