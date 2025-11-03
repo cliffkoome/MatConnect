@@ -2,33 +2,32 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf--8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard - MatConnect</title>
-  <link rel="stylesheet" href="styles/admin-dashboard.css" />
+  <title>Matatu Admin Dashboard - MatConnect</title>
+  <link rel="stylesheet" href="styles/mat-admin.css" />
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-  <script src="./scripts/admin-dashboard.js" defer></script>
+  <script src="./scripts/mat-admin-dashboard.js" defer></script>
 </head>
 
 <body>
   <div class="page-wrapper">
     <header class="site-header">
       <div class="header-container">
-        <a href="/admin-dashboard.html" class="logo">MatConnect</a>
+        <a href="/mat-admin-dashboard.html" class="logo">MatConnect</a>
         <nav class="main-nav">
           <ul>
-            <li><a href="/admin-dashboard.html" class="active">Dashboard</a></li>
-            <li><a href="/manage-stages.html">Stages & Vehicles</a></li>
-            <li><a href="/manage-users.html">Manage Users</a></li>
+            <li><a href="/mat-admin-dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="/mat-admin-vehicles.html">My Vehicles</a></li>
           </ul>
         </nav>
         <div class="header-actions">
           <div class="user-menu">
             <button class="user-menu-btn">
               <img alt="User Avatar" class="avatar" id="user-avatar" />
-              <span class="user-name">Admin</span>
+              <span class="user-name">Matatu Admin</span>
               <span class="material-symbols-outlined dropdown-icon">expand_more</span>
             </button>
             <div class="user-menu-dropdown">
@@ -42,8 +41,8 @@
 
     <main class="dashboard-container">
       <header class="dashboard-header">
-        <h1>Admin Dashboard</h1>
-        <p>Welcome back! Here's an overview of the system.</p>
+        <h1>My Dashboard</h1>
+        <p>Welcome back! Here's an overview of your fleet's performance today.</p>
       </header>
 
       <!-- Stats Cards -->
@@ -53,66 +52,55 @@
             <span class="material-symbols-outlined">directions_bus</span>
           </div>
           <div class="stat-info">
-            <p>Total Vehicles</p>
+            <p>My Vehicles</p>
             <span id="total-vehicles-stat">--</span>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon-wrapper icon-green">
-            <span class="material-symbols-outlined">signal_cellular_alt</span>
+          <div class="stat-icon-wrapper icon-purple">
+            <span class="material-symbols-outlined">social_distance</span>
           </div>
           <div class="stat-info">
-            <p>Online Vehicles</p>
-            <span id="online-vehicles-stat">--</span>
+            <p>Total Distance Today</p>
+            <span id="total-distance-stat">-- km</span>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon-wrapper icon-orange">
-            <span class="material-symbols-outlined">pin_drop</span>
+          <div class="stat-icon-wrapper icon-green">
+            <span class="material-symbols-outlined">trip_origin</span>
           </div>
           <div class="stat-info">
-            <p>Configured Stages</p>
-            <span id="total-stages-stat">--</span>
+            <p>Total Trips Today</p>
+            <span id="total-trips-stat">--</span>
           </div>
         </div>
       </section>
 
       <!-- Main Content Grid -->
-      <div class="dashboard-grid">
+      <div class="dashboard-grid-full">
         <section class="grid-main">
           <div class="panel">
             <div class="card-header">
               <h3>Live Vehicle Status</h3>
-              <a href="#" class="btn">View All</a>
+              <a href="/mat-admin-vehicles.html" class="btn">View All Stats</a>
             </div>
             <div class="table-wrapper">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th>Vehicle</th>
-                    <th>Route</th>
                     <th>Status</th>
-                    <th>Location</th>
+                    <th>Current Location</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="vehicle-table-body">
                   <!-- Vehicle data will be dynamically inserted here -->
-                  <tr><td colspan="4">Loading vehicle data...</td></tr>
+                  <tr><td colspan="3">Loading vehicle data...</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </section>
-
-        <aside class="grid-sidebar">
-          <div class="panel">
-            <h3>Recent Feedback</h3>
-            <div id="feedback-list">
-              <!-- Real feedback items will be dynamically inserted here -->
-              <p class="loading-text">Loading feedback...</p>
-            </div>
-          </div>
-        </aside>
       </div>
     </main>
   </div>

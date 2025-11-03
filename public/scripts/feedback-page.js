@@ -1,7 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
   const accessToken = localStorage.getItem('accessToken');
   const ratingStarsContainer = document.querySelector('.rating-stars');
+  const profileIcon = document.querySelector('.profile-icon');
 
+  const feedbackForm = document.getElementById('feedback-form');
+  const vehicleSelect = document.getElementById('vehicle-select');
   // Protect the page: redirect to login if not authenticated
   if (!accessToken) {
     window.location.href = '/login.html';
@@ -12,6 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const mainNav = document.querySelector('.main-nav');
   const navList = mainNav.querySelector('ul');
   const headerActions = document.querySelector('.header-actions');
+
+  const apiFetch = async (url, options = {}) => {
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    };
+    const response = await fetch(url, { ...defaultOptions, ...options });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        window.location.href = '/login.html';
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'API request failed');
+    }
+    return response.json();
+  };
 
   // --- Mobile Menu Toggle ---
   mobileMenuBtn.addEventListener('click', () => {
@@ -63,4 +84,75 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  async function populateVehicleDropdown() {
+    try {
+      const vehicles = await apiFetch('/api/feedback/vehicles');
+      if (vehicles.length > 0) {
+        vehicleSelect.innerHTML = '<option value="" disabled selected>Select a vehicle...</option>';
+        vehicles.forEach(vehicle => {
+          const option = document.createElement('option');
+          option.value = vehicle.id;
+          option.textContent = vehicle.plateNumber;
+          vehicleSelect.appendChild(option);
+        });
+      } else {
+        vehicleSelect.innerHTML = '<option value="" disabled selected>No vehicles available for feedback.</option>';
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+      vehicleSelect.innerHTML = '<option value="" disabled selected>Could not load vehicles.</option>';
+    }
+  }
+
+  async function handleFeedbackSubmit(event) {
+    event.preventDefault();
+    const formData = new FormData(feedbackForm);
+    const vehicleId = formData.get('vehicle');
+    const rating = formData.get('rating');
+    const comment = formData.get('comments');
+
+    if (!vehicleId) {
+      alert('Please select a vehicle.');
+      return;
+    }
+    if (!rating) {
+      alert('Please provide a star rating.');
+      return;
+    }
+
+    try {
+      const response = await apiFetch('/api/feedback', {
+        method: 'POST',
+        body: JSON.stringify({ vehicleId, rating: parseInt(rating), comment }),
+      });
+      alert(response.message);
+      feedbackForm.reset();
+    } catch (error) {
+      alert(`Error submitting feedback: ${error.message}`);
+    }
+  }
+
+  async function fetchProfileImage() {
+    if (!profileIcon) return;
+    try {
+      const res = await fetch('/api/auth/me/passenger', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch profile image.');
+
+      const { profilePictureUrl } = await res.json();
+      profileIcon.src = profilePictureUrl || './images/pfp.jpg';
+      profileIcon.refferrerPolicy = 'no-referrer';
+    } catch (err) {
+      console.error('Error fetching profile image:', err);
+      profileIcon.src = './images/pfp.jpg';
+    }
+  }
+
+  fetchProfileImage();
+
+  feedbackForm.addEventListener('submit', handleFeedbackSubmit);
+  populateVehicleDropdown();
 });

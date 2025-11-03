@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeVehicleModalBtn = document.getElementById('close-vehicle-modal-btn');
   const cancelVehicleBtn = document.getElementById('cancel-vehicle-btn');
   const addVehicleForm = document.getElementById('add-vehicle-form');
+  const vehicleOwnerSelect = document.getElementById('vehicle-owner-select');
 
   document.querySelector('.avatar').src = '/images/pfp.jpg';
 
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let stages = [];
   let vehicles = [];
   let selectedStage = null;
+  let matAdmins = [];
   const accessToken = localStorage.getItem('accessToken');
 
   // --- API Helper ---
@@ -191,11 +193,12 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     const plateNumber = document.getElementById('vehicle-plate-input').value;
     const carId = document.getElementById('vehicle-carid-input').value;
+    const ownerId = vehicleOwnerSelect.value;
 
     try {
       const newVehicle = await apiFetch('/api/admin/vehicles', {
         method: 'POST',
-        body: JSON.stringify({ plateNumber, carId }),
+        body: JSON.stringify({ plateNumber, carId, ownerId: ownerId || null }),
       });
       vehicles.push(newVehicle);
       vehicles.sort((a, b) => a.plateNumber.localeCompare(b.plateNumber));
@@ -217,6 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeVehicleModal = () => {
     vehicleModal.classList.add('hidden');
     addVehicleForm.reset();
+  };
+
+  const populateOwnerDropdown = () => {
+    vehicleOwnerSelect.innerHTML = '<option value="">-- No Owner --</option>';
+    matAdmins.forEach(admin => {
+      vehicleOwnerSelect.innerHTML += `<option value="${admin.id}">${admin.name}</option>`;
+    });
   };
 
   addStageBtn.addEventListener('click', openStageModal);
@@ -280,13 +290,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial data fetch
     try {
-      const [stagesData, vehiclesData] = await Promise.all([
+      const [stagesData, vehiclesData, matAdminsData] = await Promise.all([
         apiFetch('/api/admin/stages'),
         apiFetch('/api/admin/vehicles'),
+        apiFetch('/api/admin/mat-admins'),
       ]);
       stages = stagesData;
       vehicles = vehiclesData;
+      matAdmins = matAdminsData;
       renderStageList();
+      populateOwnerDropdown();
       renderStageDetails(); // Render the initial empty state for details
     } catch (error) {
       stageList.innerHTML = `<p class="error-message">Failed to load data: ${error.message}</p>`;

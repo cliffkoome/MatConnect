@@ -21,6 +21,7 @@
           <ul>
             <li><a href="/admin-dashboard.html">Dashboard</a></li>
             <li><a href="/manage-stages.html" class="active">Stages & Vehicles</a></li>
+            <li><a href="/manage-users.html">Manage Users</a></li>
           </ul>
         </div>
         <div class="header-actions">
@@ -104,6 +105,13 @@
           <div class="form-group">
             <label for="vehicle-carid-input">Internal Car ID</label>
             <input type="text" id="vehicle-carid-input" required placeholder="e.g., CAR_003 (from GPS device)" />
+          </div>
+          <div class="form-group">
+            <label for="vehicle-owner-select">Assign Owner (Optional)</label>
+            <select id="vehicle-owner-select" class="form-select">
+              <option value="">-- No Owner --</option>
+              <!-- MatAdmin users will be populated here -->
+            </select>
           </div>
         </div>
         <footer class="modal-footer">

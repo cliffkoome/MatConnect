@@ -84,48 +84,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Mock function to display feedback
-  function displayMockFeedback() {
-    const mockFeedback = [
-      {
-        name: "Sarah W.",
-        time: "2d ago",
-        rating: 5,
-        comment: "Great service, the ETA was spot on!",
-        avatar: "https://i.pravatar.cc/150?img=1"
-      },
-      {
-        name: "David M.",
-        time: "3d ago",
-        rating: 4,
-        comment: "The app is helpful, but the ETA could be more accurate sometimes.",
-        avatar: "https://i.pravatar.cc/150?img=3"
-      },
-      {
-        name: "Jane D.",
-        time: "5d ago",
-        rating: 5,
-        comment: "Very clean vehicle and polite driver.",
-        avatar: "https://i.pravatar.cc/150?img=5"
+  async function fetchAndDisplayFeedback() {
+    try {
+      const feedbacks = await apiFetch('/api/admin/feedback');
+      if (feedbacks.length > 0) {
+        feedbackList.innerHTML = feedbacks.map(item => {
+          const stars = Array(5).fill(0).map((_, i) =>
+            `<span class="material-symbols-outlined ${i < item.rating ? '' : 'star-empty'}">star</span>`
+          ).join('');
+          const timeAgo = new Date(item.createdAt).toLocaleDateString();
+
+          return `
+            <div class="feedback-item">
+              <div class="feedback-body">
+                <div class="feedback-meta"><p>${item.User.name} on <strong>${item.Vehicle.plateNumber}</strong></p><time>${timeAgo}</time></div>
+                <div class="star-rating">${stars}</div>
+                <p class="feedback-comment">${item.comment || 'No comment provided.'}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        feedbackList.innerHTML = '<p>No recent feedback.</p>';
       }
-    ];
-
-    feedbackList.innerHTML = mockFeedback.map(item => {
-      const stars = Array(5).fill(0).map((_, i) =>
-        `<span class="material-symbols-outlined ${i < item.rating ? '' : 'star-empty'}">star</span>`
-      ).join('');
-
-      return `
-        <div class="feedback-item">
-          <img alt="User Avatar" class="avatar" src="${item.avatar}" />
-          <div class="feedback-body">
-            <div class="feedback-meta"><p>${item.name}</p><time>${item.time}</time></div>
-            <div class="star-rating">${stars}</div>
-            <p class="feedback-comment">${item.comment}</p>
-          </div>
-        </div>
-      `;
-    }).join('');
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      feedbackList.innerHTML = '<p class="error-message">Could not load feedback.</p>';
+    }
   }
 
   const logoutUser = async () => {
@@ -175,8 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchAndDisplayDashboardData();
   setInterval(fetchAndDisplayDashboardData, 60000); // Refresh every 60 seconds
 
-  // Display mock feedback for demonstration
-  displayMockFeedback();
+  fetchAndDisplayFeedback();
 
   // Close user menu when clicking outside
   document.addEventListener('click', () => {

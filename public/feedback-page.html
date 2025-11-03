@@ -19,7 +19,7 @@
                 <a class="logo" href="index.html">MatConnect</a>
                 <nav class="main-nav">
                     <ul>
-                        <li><a href="index.html">Home</a></li>
+                        <!-- <li><a href="index.html">Home</a></li> -->
                         <li><a href="select-stage.html">Stages</a></li>
                         <li><a href="feedback-page.html" class="active">Feedback</a></li>
                     </ul>
@@ -42,7 +42,14 @@
                     <h2>Your Feedback Matters</h2>
                     <p>Help us improve your matatu experience. Share your thoughts on your recent ride.</p>
                 </div>
-                <form class="feedback-form">
+                <form class="feedback-form" id="feedback-form">
+                    <div class="form-group">
+                        <label for="vehicle-select">Select Vehicle</label>
+                        <select id="vehicle-select" name="vehicle" class="form-select" required>
+                            <option value="" disabled selected>Loading vehicles...</option>
+                            <!-- Vehicle options will be populated by JavaScript -->
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label for="rating">Rate Your Experience</label>
                         <fieldset class="rating-stars">

@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Login successful, no 2FA
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('role', data.role);
-        window.location.href = data.role === 'Admin' ? '/admin-dashboard.html' : '/select-stage.html';
+        redirectToDashboard(data.role);
       }
     } else {
       // Login failed (e.g., wrong password)
@@ -91,12 +91,22 @@ document.addEventListener('DOMContentLoaded', () => {
       // 2FA verification successful
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('role', data.role);
-      window.location.href = data.role === 'Admin' ? '/admin-dashboard.html' : '/select-stage.html';
+      redirectToDashboard(data.role);
     } else {
       // 2FA verification failed
       showMessage(data.message || 'Invalid 2FA code.', 'error');
       tokenInput.value = ''; // Clear the input for retry
       tokenInput.focus();
+    }
+  }
+
+  function redirectToDashboard(role) {
+    if (role === 'Admin') {
+      window.location.href = '/admin-dashboard.html';
+    } else if (role === 'MatAdmin') {
+      window.location.href = '/mat-admin-dashboard.html';
+    } else {
+      window.location.href = '/select-stage.html';
     }
   }
 
