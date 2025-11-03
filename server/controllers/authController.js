@@ -13,6 +13,9 @@ const loginUser = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    if (user.disabled)
+      return res.status(403).json({ message: "Your account has been disabled. Please contact an administrator." });
+
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword)
       return res.status(401).json({ message: "Invalid password" });
@@ -96,6 +99,11 @@ const createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // This public endpoint should only create Passengers for security.
+    if (role && role !== 'Passenger') {
+      return res.status(403).json({ message: 'Cannot create admin-level users via this endpoint.' });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -104,8 +112,9 @@ const createUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role,
+      role: 'Passenger', // Force role to Passenger
     });
+    delete user.dataValues.password;
 
     res.status(201).json({ message: "User created successfully", user });
   } catch (error) {

@@ -12,7 +12,7 @@ const User = sequelize.define(
       allowNull: true // Allow null for Google-based signups
     },
     role: {
-      type: DataTypes.ENUM("Passenger", "Admin"),
+      type: DataTypes.ENUM("Passenger", "Admin", "MatAdmin"),
       allowNull: false,
     },
     googleId: {
@@ -36,6 +36,11 @@ const User = sequelize.define(
       defaultValue: false,
       allowNull: false,
     },
+    disabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    }
   },
   {
     timestamps: true,

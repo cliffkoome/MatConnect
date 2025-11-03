@@ -2,7 +2,7 @@ require("dotenv").config();
 const path = require("path");
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const { syncDB, Stage, Vehicle, User } = require("./models");
+const { syncDB, Stage, Vehicle, User, DailyTrip } = require("./models");
 const app = express();
 const passport = require('passport');
 
@@ -23,11 +23,14 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/eta", require("./routes/etaRoutes"));
 app.use("/api/stages", require("./routes/stageRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/feedback", require("./routes/feedbackRoutes"));
+app.use("/api/mat-admin", require("./routes/matAdminRoutes"));
 
 // --- Background ETA Update Service ---
 const { calculateEtasForStage } = require('./services/etaCalculationService');
 const { sendSms } = require('./services/smsService');
 const { updateStageEtas } = require('./services/firebaseService');
+const { trackAllVehiclesDistance } = require('./services/distanceTrackingService');
 
 const UPDATE_INTERVAL = 30000; // 30 seconds
 
@@ -59,6 +62,24 @@ const runEtaUpdateCycle = async () => {
       // --- SMS Alert Logic ---
       for (const vehicle of vehicleEtas) {
         if (vehicle.status === 'Arrived') {
+          // --- Trip Counting Logic ---
+          const today = new Date().toISOString().slice(0, 10);
+          const [dailyTrip] = await DailyTrip.findOrCreate({
+            where: {
+              vehicleId: vehicle.id,
+              date: today,
+            },
+            defaults: {
+              vehicleId: vehicle.id,
+              date: today,
+              tripCount: 0,
+            },
+          });
+          // Increment trip count.
+          // Note: To prevent re-counting for the same arrival, more complex state management would be needed.
+          // This simple increment assumes the vehicle moves away before the next cycle.
+          await dailyTrip.increment('tripCount', { by: 1 });
+
           // We iterate over a copy of the subscribers array because we are modifying the subscription
           // in the loop, which could cause issues with the iterator.
           const subscribersCopy = [...stage.Subscribers];
@@ -80,6 +101,9 @@ const runEtaUpdateCycle = async () => {
   } catch (error) {
     console.error('❌ Error during ETA update cycle:', error);
   }
+
+  // Also run the distance tracking in the same cycle
+  await trackAllVehiclesDistance();
 };
 
 // Sync DB & Start Server
