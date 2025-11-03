@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const mainNav = document.querySelector('.main-nav');
   const headerActions = document.querySelector('.header-actions');
 
+  const profileIcon = document.querySelector('.profile-icon');
+
   if (!accessToken) {
     window.location.href = '/login.html';
     return;
@@ -28,8 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Use a placeholder image for now. You can add image URLs to your Stage model later.
     const imageNumber = Math.floor(Math.random() * 6) + 1; // Cycle through 6 placeholder images
-    console.log(imageNumber);
-    
 
     card.innerHTML = `
       <div class="card-image">
@@ -104,6 +104,27 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutDesktopBtn.addEventListener('click', logoutUser);
     headerActions.insertBefore(logoutDesktopBtn, headerActions.firstChild);
   }
+
+  async function fetchProfileImage() {
+    if (!profileIcon) return;
+    try {
+      const res = await fetch('/api/auth/me/passenger', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch profile image.');
+
+      const { profilePictureUrl } = await res.json();
+      profileIcon.src = profilePictureUrl || './images/pfp.jpg';
+      profileIcon.refferrerPolicy = 'no-referrer';
+    } catch (err) {
+      console.error('Error fetching profile image:', err);
+      profileIcon.src = './images/pfp.jpg';
+    }
+  }
+
+  // Fetch the profile image when the page loads
+  fetchProfileImage();
 
   fetchAndDisplayStages();
 });

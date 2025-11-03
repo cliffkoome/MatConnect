@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Users - MatConnect</title>
+  <link rel="stylesheet" href="styles/admin-dashboard.css" />
+  <link rel="stylesheet" href="styles/manage-users.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <script src="./scripts/manage-users.js" defer></script>
+</head>
+
+<body>
+  <div class="page-wrapper">
+    <header class="site-header">
+      <div class="header-container">
+        <a href="/admin-dashboard.html" class="logo">MatConnect</a>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="/admin-dashboard.html">Dashboard</a></li>
+            <li><a href="/manage-stages.html">Stages & Vehicles</a></li>
+            <li><a href="/manage-users.html" class="active">Manage Users</a></li>
+          </ul>
+        </nav>
+        <div class="header-actions">
+          <div class="user-menu">
+            <button class="user-menu-btn">
+              <img alt="User Avatar" class="avatar" id="user-avatar" />
+              <span class="user-name">Admin</span>
+              <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </button>
+            <div class="user-menu-dropdown">
+              <a href="#" id="logout-link-desktop">Logout</a>
+            </div>
+          </div>
+          <button class="mobile-menu-btn"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-container">
+      <div class="panel">
+        <div class="card-header">
+          <h3>System Users</h3>
+          <div class="header-controls">
+            <div class="search-bar">
+              <span class="material-symbols-outlined">search</span>
+              <input type="text" id="user-search-input" placeholder="Search by name or email...">
+            </div>
+            <div class="filter-buttons" id="role-filter-buttons">
+              <button class="active" data-role="">All</button>
+              <button data-role="Admin">Admins</button>
+              <button data-role="MatAdmin">MatAdmins</button>
+              <button data-role="Passenger">Passengers</button>
+            </div>
+            <button class="btn btn-primary" id="add-user-btn">
+              <span class="material-symbols-outlined">add</span> Add User
+            </button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <!-- User data will be dynamically inserted here -->
+              <tr><td colspan="5">Loading users...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal for Adding a New User -->
+  <div class="modal-overlay hidden" id="add-user-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h3>Add New User</h3>
+        <button class="icon-button" id="close-user-modal-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </header>
+      <form id="add-user-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="user-name-input">Full Name</label>
+            <input type="text" id="user-name-input" required />
+          </div>
+          <div class="form-group">
+            <label for="user-email-input">Email Address</label>
+            <input type="email" id="user-email-input" required />
+          </div>
+          <div class="form-group">
+            <label for="user-password-input">Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="user-password-input" required />
+              <button type="button" class="icon-button password-toggle-btn" title="Show password">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="user-role-select">Role</label>
+            <select id="user-role-select" class="form-select" required>
+              <option value="MatAdmin">Matatu Admin</option>
+              <option value="Admin">System Admin</option>
+            </select>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-user-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save User</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

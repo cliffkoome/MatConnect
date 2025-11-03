@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const logoutBtn = document.getElementById('logout-btn');
   const notificationBell = document.getElementById('notification-bell');
   const notificationIcon = notificationBell.querySelector('.material-symbols-outlined');
+  const profileIcon = document.querySelector('.profile-icon');
 
   avatar.addEventListener('click', () => {
     window.location.href = '/user-profile.html';
@@ -103,6 +104,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function fetchProfileImage() {
+    if (!profileIcon) return;
+    try {
+      const res = await fetch('/api/auth/me/passenger', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch profile image.');
+
+      const { profilePictureUrl } = await res.json();
+      profileIcon.src = profilePictureUrl || './images/pfp.jpg';
+      profileIcon.refferrerPolicy = 'no-referrer';
+    } catch (err) {
+      console.error('Error fetching profile image:', err);
+      profileIcon.src = './images/pfp.jpg';
+    }
+  }
+
   async function toggleSubscription() {
     const isSubscribed = notificationBell.classList.contains('active');
     const endpoint = isSubscribed ? 'unsubscribe' : 'subscribe';
@@ -131,6 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
       notificationBell.disabled = false;
     }
   }
+
+  // Fetch profile image
+  fetchProfileImage();
 
   // Fetch data immediately and then every 30 seconds
   fetchAndDisplayEtas();
