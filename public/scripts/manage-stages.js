@@ -110,11 +110,17 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="material-symbols-outlined">local_shipping</span>
             <p>${vehicle.plateNumber}</p>
           </div>
-          <button class="icon-button remove-btn" data-vehicle-id="${vehicle.id}">
-            <span class="material-symbols-outlined">delete</span>
-          </button>
+          <div class="vehicle-actions">
+            <button class="icon-button unassign-btn" title="Unassign from stage" data-vehicle-id="${vehicle.id}">
+              <span class="material-symbols-outlined">link_off</span>
+            </button>
+            <button class="icon-button delete-btn" title="Delete vehicle permanently" data-vehicle-id="${vehicle.id}">
+              <span class="material-symbols-outlined">delete_forever</span>
+            </button>
+          </div>
         `;
-        li.querySelector('.remove-btn').addEventListener('click', () => handleRemoveVehicle(vehicle.id));
+        li.querySelector('.unassign-btn').addEventListener('click', () => handleRemoveVehicle(vehicle.id));
+        li.querySelector('.delete-btn').addEventListener('click', () => handleDeleteVehicle(vehicle.id));
         assignedVehiclesList.appendChild(li);
       });
     }
@@ -189,6 +195,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const handleDeleteVehicle = async (vehicleId) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!vehicle) return;
+
+    if (!confirm(`Are you sure you want to permanently delete vehicle ${vehicle.plateNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await apiFetch(`/api/admin/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+      });
+      // Refetch all data to ensure UI consistency
+      await initializeApp(true);
+    } catch (error) {
+      alert(`Error deleting vehicle: ${error.message}`);
+    }
+  };
+
   const handleAddVehicle = async (event) => {
     event.preventDefault();
     const plateNumber = document.getElementById('vehicle-plate-input').value;
@@ -254,13 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/login.html';
   };
   // --- Initialization ---
-  const initializeApp = async () => {
+  const initializeApp = async (isRefresh = false) => {
     // Auth check
     const role = localStorage.getItem('role');
     if (!accessToken || role !== 'Admin') {
       window.location.href = '/login.html';
       return;
     }
+    if (isRefresh) selectedStage = null; // Reset selection on refresh
 
     // --- Mobile Menu Toggle ---
     mobileMenuBtn.addEventListener('click', () => {
@@ -276,17 +302,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Add Logout Links ---
-    const navList = mainNav.querySelector('ul');
-    const logoutLi = document.createElement('li');
-    logoutLi.innerHTML = `<a href="#" class="logout-link">Logout</a>`;
-    navList.appendChild(logoutLi);
-    logoutLi.querySelector('.logout-link').addEventListener('click', logoutUser);
-    logoutLinkDesktop.addEventListener('click', logoutUser);
+    if (!isRefresh) {
+      const navList = mainNav.querySelector('ul');
+      const logoutLi = document.createElement('li');
+      logoutLi.innerHTML = `<a href="#" class="logout-link">Logout</a>`;
+      navList.appendChild(logoutLi);
+      logoutLi.querySelector('.logout-link').addEventListener('click', logoutUser);
+      logoutLinkDesktop.addEventListener('click', logoutUser);
 
-    // Add event listeners
-    addStageForm.addEventListener('submit', handleAddStage);
-    addVehicleForm.addEventListener('submit', handleAddVehicle);
-    assignVehicleBtn.addEventListener('click', handleAssignVehicle);    
+      // Add event listeners
+      addStageForm.addEventListener('submit', handleAddStage);
+      addVehicleForm.addEventListener('submit', handleAddVehicle);
+      assignVehicleBtn.addEventListener('click', handleAssignVehicle);
+    }
 
     // Initial data fetch
     try {

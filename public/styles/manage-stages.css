@@ -297,6 +297,12 @@ body {
   border-radius: 0.5rem;
 }
 
+.vehicle-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .vehicle-info {
   display: flex;
   align-items: center;
@@ -311,8 +317,9 @@ body {
   font-weight: 500;
 }
 
-.vehicle-list-item .remove-btn {
-  color: var(--text-muted-light);
+.vehicle-list-item .delete-btn:hover {
+  color: var(--red-dark);
+  background-color: var(--red-light);
 }
 
 .vehicle-list-item .remove-btn:hover {
