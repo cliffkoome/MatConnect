@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   loginUser,
   createUser,
+  updateProfile,
   me,
   refreshAccessToken,
   logoutUser,
@@ -25,6 +26,10 @@ router.post('/register', createUser);
 // Check login status
 router.get('/me/admin', authMiddleware('Admin'), me);
 router.get('/me/passenger', authMiddleware('Passenger'), me);
+router.get('/me/mat-admin', authMiddleware('MatAdmin'), me);
+
+// Update user profile
+router.put('/me', authMiddleware(), updateProfile);
 
 // Refresh Token
 router.post('/refresh-token', refreshAccessToken);

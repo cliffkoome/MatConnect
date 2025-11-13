@@ -1,6 +1,6 @@
-const { getVehicleLocation } = require('../services/firebaseService');
-const { getDirectionsInfo } = require('../services/googleMapsService');
 const { Stage, Vehicle } = require('../models');
+const { calculateEtasForStage } = require('../services/etaCalculationService');
+const { getVehicleLocation } = require('../services/firebaseService');
 
 const getStageEta = async (req, res) => {
   const { stageId } = req.params;
@@ -17,37 +17,19 @@ const getStageEta = async (req, res) => {
     return res.status(404).json({ message: 'Stage not found' });
   }
   try {
-    const vehicleEtas = await Promise.all(stage.Vehicles.map(async (vehicle) => {
-      const carId = vehicle.carId;
-      const vehicleLocation = await getVehicleLocation(carId);
+    // --- Replicate the logic from server.js to build the vehicleLocations map ---
+    const vehicleLocations = new Map();
+    if (stage.Vehicles && stage.Vehicles.length > 0) {
+      await Promise.all(stage.Vehicles.map(async (vehicle) => {
+        const location = await getVehicleLocation(vehicle.carId);
+        if (location) {
+          vehicleLocations.set(vehicle.id, location);
+        }
+      }));
+    }
+    // --- End replication ---
 
-      if (!vehicleLocation || !vehicleLocation.latitude || !vehicleLocation.longitude) {
-        console.log(`Location data not found or incomplete for ${carId}`);
-        return { carId, plateNumber: carId, eta: 'N/A', status: 'Offline' };
-      }
-
-      const origin = { latitude: vehicleLocation.latitude, longitude: vehicleLocation.longitude };
-      const destination = { latitude: stage.latitude, longitude: stage.longitude };
-
-      const directions = await getDirectionsInfo(origin, destination);
-      
-      if (!directions || !directions.distance || !directions.duration) {
-        console.log(`Could not calculate directions for ${carId}`);
-        return { carId, plateNumber: vehicle.plateNumber, eta: 'N/A', status: 'Unknown' };
-      }
-
-      const duration = directions.duration_in_traffic || directions.duration;
-      const distanceInMeters = directions.distance.value;
-      const status = distanceInMeters < 50 ? 'Arrived' : 'Approaching';
-
-      return {
-        carId: carId,
-        plateNumber: vehicle.plateNumber,
-        eta: status === 'Arrived' ? 'Arrived' : duration.text,
-        status: status
-      };
-    }));
-
+    const vehicleEtas = await calculateEtasForStage(stage, vehicleLocations);
     res.status(200).json({ stageName: stage.name, arrivals: vehicleEtas });
   } catch (error) {
     console.error('Error calculating ETAs:', error);

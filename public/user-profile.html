@@ -25,8 +25,8 @@
             <a class="logo" href="index.html">MatConnect</a>
           </div>
           <nav class="main-nav">
-            <a href="index.html">Home</a>
             <a href="select-stage.html">Stages</a>
+            <a href="feedback-page.html">Feedback</a>
             <a href="user-profile.html" class="active">Profile</a>
           </nav>
           <div class="header-actions">
@@ -61,7 +61,7 @@
             </div>
             <div class="form-group">
               <label for="email">Email</label>
-              <input class="form-input" id="email" type="email" value="john.doe@ma3route.com" />
+              <input class="form-input" id="email" type="email" value="john.doe@ma3route.com" readonly />
             </div>
             <div class="form-group">
               <label for="phone">Phone Number</label>
@@ -75,7 +75,7 @@
 
         <hr class="divider" />
 
-        <div class="two-factor-section">
+        <div class="two-factor-section" id="2fa-section">
           <h3>Two-Factor Authentication (2FA)</h3>
           <div class="two-factor-content">
             <div class="form-group">
@@ -92,7 +92,7 @@
 
         <hr class="divider" />
 
-        <div class="password-reset-section">
+        <div class="password-reset-section" id="password-reset-section">
           <h3>Password Reset</h3>
           <p class="description" style="margin-bottom: 1rem;">To change your password, please use the "Forgot Password"
             link on the login page.</p>

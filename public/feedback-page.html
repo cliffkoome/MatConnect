@@ -9,25 +9,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
+    <script src="./scripts/feedback-page.js" defer></script>
 </head>
 <body>
     <div class="page-wrapper">
         <header class="site-header">
             <div class="container header-content">
-                <div class="logo">
-                    <svg class="logo-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
-                    </svg>
-                    <h1>Ma3Route Feedback</h1>
-                </div>
+                <a class="logo" href="index.html">MatConnect</a>
                 <nav class="main-nav">
-                    <a href="#">Home</a>
-                    <a href="#">Schedule</a>
-                    <a href="#">Profile</a>
+                    <ul>
+                        <!-- <li><a href="index.html">Home</a></li> -->
+                        <li><a href="select-stage.html">Stages</a></li>
+                        <li><a href="feedback-page.html" class="active">Feedback</a></li>
+                    </ul>
                 </nav>
-                <button class="mobile-menu-btn">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
+                <div class="header-actions">
+                    <div class="user-profile">
+                        <img alt="User profile picture" class="profile-icon" src="./images/pfp.jpg"
+                            onclick="location='user-profile.html'">
+                    </div>
+                    <button class="mobile-menu-btn">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -37,7 +42,14 @@
                     <h2>Your Feedback Matters</h2>
                     <p>Help us improve your matatu experience. Share your thoughts on your recent ride.</p>
                 </div>
-                <form class="feedback-form">
+                <form class="feedback-form" id="feedback-form">
+                    <div class="form-group">
+                        <label for="vehicle-select">Select Vehicle</label>
+                        <select id="vehicle-select" name="vehicle" class="form-select" required>
+                            <option value="" disabled selected>Loading vehicles...</option>
+                            <!-- Vehicle options will be populated by JavaScript -->
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label for="rating">Rate Your Experience</label>
                         <fieldset class="rating-stars">

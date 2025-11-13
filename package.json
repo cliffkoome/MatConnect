@@ -19,7 +19,8 @@
   },
   "homepage": "https://github.com/cliffkoome/GRP-A-ISP-cliffkoome#readme",
   "dependencies": {
-    "axios": "^1.12.2",
+    "africastalking": "^0.7.7",
+    "axios": "^1.13.1",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.2",
