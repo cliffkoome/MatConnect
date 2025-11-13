@@ -6,6 +6,7 @@ const {
   createStage,
   getAllVehicles,
   createVehicle,
+  deleteVehicle,
   assignVehicleToStage,
   removeVehicleFromStage,
   getDashboardData,
@@ -35,6 +36,7 @@ router.get('/stages', getAllStages);
 router.post('/stages', createStage);
 router.get('/vehicles', getAllVehicles);
 router.post('/vehicles', createVehicle);
+router.delete('/vehicles/:id', deleteVehicle);
 router.post('/stages/assign-vehicle', assignVehicleToStage);
 router.delete('/stages/:stageId/vehicles/:vehicleId', removeVehicleFromStage);
 

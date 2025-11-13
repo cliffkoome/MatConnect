@@ -49,6 +49,22 @@ const createVehicle = async (req, res) => {
   }
 };
 
+const deleteVehicle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vehicle = await Vehicle.findByPk(id);
+
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehicle not found' });
+    }
+
+    await vehicle.destroy();
+    res.status(200).json({ message: 'Vehicle deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting vehicle', error: error.message });
+  }
+};
+
 // --- Association Management ---
 
 const assignVehicleToStage = async (req, res) => {
@@ -229,4 +245,4 @@ const createUserByAdmin = async (req, res) => {
   }
 };
 
-module.exports = { getAllStages, createStage, getAllVehicles, createVehicle, assignVehicleToStage, removeVehicleFromStage, getDashboardData, getAllMatAdmins, getAllFeedback, getAllUsers, updateUserByAdmin, deleteUserByAdmin, createUserByAdmin };
+module.exports = { getAllStages, createStage, getAllVehicles, createVehicle, deleteVehicle, assignVehicleToStage, removeVehicleFromStage, getDashboardData, getAllMatAdmins, getAllFeedback, getAllUsers, updateUserByAdmin, deleteUserByAdmin, createUserByAdmin };

@@ -97,12 +97,16 @@ const refreshAccessToken = (req, res) => {
 // Create a new user
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
+    let role = 'Passenger'; // Default role
 
-    // This public endpoint should only create Passengers for security.
-    if (role && role !== 'Passenger') {
-      return res.status(403).json({ message: 'Cannot create admin-level users via this endpoint.' });
+    // --- Bootstrap Logic: Make the first user an Admin ---
+    const userCount = await User.count();
+    if (userCount === 0) {
+      role = 'Admin';
+      console.log('✨ No users found. Promoting first registered user to Admin.');
     }
+    // --- End Bootstrap Logic ---
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -112,7 +116,7 @@ const createUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: 'Passenger', // Force role to Passenger
+      role: role,
     });
     delete user.dataValues.password;
 
