@@ -1,6 +1,11 @@
 const loginBtns = document.querySelectorAll('.login');
 const signupBtns = document.querySelectorAll('.signup');
 
+const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+const mainNav = document.querySelector('.main-nav');
+const navLinks = document.querySelector('.nav-links');
+
+
 const accessToken = localStorage.getItem('accessToken');
 const role = localStorage.getItem('role');
 
@@ -19,6 +24,9 @@ signupBtns.forEach(btn => {
     window.location.href = 'signup.html'
   })
 })
+mobileMenuBtn.addEventListener('click', () => {
+  mainNav.classList.toggle('is-active');
+  })
 
 // Only try to fetch user data if a token exists
 if (accessToken && role) {
@@ -46,11 +54,30 @@ if (accessToken && role) {
             <i class="fa-solid fa-right-from-bracket">
           </i></button>
         `;
+
+        // Add logout button to mobile nav
+        const logoutLi = document.createElement('li');
+        const logoutMobileBtn = document.createElement('a');
+        logoutMobileBtn.href = '#';
+        logoutMobileBtn.textContent = 'Logout';
+        logoutMobileBtn.classList.add('logout');
+        logoutLi.appendChild(logoutMobileBtn);
+        navLinks.appendChild(logoutLi);
+
+
         const logoutBtn = document.querySelector('.logout');
         logoutBtn.addEventListener('click', () => {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('role');
           alert('Logged out successfully');
+          window.location.href = 'index.html';
+        });
+
+        // Add event listener for the new mobile logout button
+        logoutMobileBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('role');
           window.location.href = 'index.html';
         });
         heroBtnsDiv.innerHTML = `

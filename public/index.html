@@ -5,12 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MatConnect</title>
-  <link rel="stylesheet" href="./styles/general.css">
   <link rel="stylesheet" href="./styles/index.css">
-  <link rel="stylesheet" href="./styles/main.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
   <script src="./scripts/index.js" defer></script>
 </head>
@@ -19,19 +18,20 @@
 
   <header class="site-header">
     <div class="container nav-container">
-      <div class="header-logo">
-        <a class="logo" href="index.html">MatConnect</a>
-      </div>
-      <div class="header-links-container">
-        <li class="header-links">
-          <a href="#">About</a>
-          <a href="#">Contact</a>
-        </li>
-      </div>
+      <a class="logo" href="index.html">MatConnect</a>
+      <nav class="main-nav">
+        <ul class="nav-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </nav>
       <div class="header-buttons">
         <button class="primary-btn btn-2 login">Login</button>
         <button class="primary-btn btn-1 signup">Sign Up</button>
       </div>
+      <button class="mobile-menu-btn">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
     </div>
   </header>
 

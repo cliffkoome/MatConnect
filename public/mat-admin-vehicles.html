@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Vehicles - MatConnect</title>
+  <link rel="stylesheet" href="styles/mat-admin.css" /> <!-- General Styles -->
+  <link rel="stylesheet" href="styles/mat-admin-vehicles.css" /> <!-- Page-Specific Styles -->
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <!-- Chart.js for graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="./scripts/mat-admin-vehicles.js" defer></script>
+</head>
+
+<body>
+  <div class="page-wrapper">
+    <header class="site-header">
+      <div class="header-container">
+        <a href="/mat-admin-dashboard.html" class="logo">MatConnect</a>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="/mat-admin-dashboard.html">Dashboard</a></li>
+            <li><a href="/mat-admin-vehicles.html" class="active">My Vehicles</a></li>
+          </ul>
+        </nav>
+        <div class="header-actions">
+          <div class="user-menu">
+            <button class="user-menu-btn">
+              <img alt="User Avatar" class="avatar" id="user-avatar" />
+              <span class="user-name">Matatu Admin</span>
+              <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </button>
+            <div class="user-menu-dropdown">
+              <a href="#" id="logout-link-desktop">Logout</a>
+            </div>
+          </div>
+          <button class="mobile-menu-btn"><span class="material-symbols-outlined">menu</span></button>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-container">
+      <header class="dashboard-header">
+        <h1>My Vehicles</h1>
+        <p>Detailed statistics and feedback for your fleet.</p>
+      </header>
+
+      <div class="controls-bar">
+        <div class="date-filter">
+          <label for="stats-date">Showing stats for:</label>
+          <input type="date" id="stats-date" name="stats-date">
+        </div>
+        <div class="fleet-report-section">
+          <div class="chart-period-filters" id="fleet-report-filters">
+            <button class="active" data-period="daily">Daily</button>
+            <button data-period="weekly">Weekly</button>
+            <button data-period="monthly">Monthly</button>
+          </div>
+          <button class="btn btn-primary" id="export-fleet-report-btn">
+            <span class="material-symbols-outlined">download</span> Export Fleet Report
+          </button>
+        </div>
+      </div>
+
+      <section id="vehicle-stats-container">
+        <!-- Vehicle stat cards will be dynamically inserted here -->
+        <div class="loading-placeholder">
+          <p>Loading vehicle stats...</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Add a modal for creating a vehicle later if needed -->
+
+</body>
+
+</html>

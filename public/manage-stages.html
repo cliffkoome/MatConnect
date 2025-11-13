@@ -1,80 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manage Stages</title>
   <link rel="stylesheet" href="styles/manage-stages.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <script src="./scripts/manage-stages.js" defer></script>
 </head>
+
 <body>
   <div class="page-wrapper">
     <header class="site-header">
-      <nav class="container navbar">
-        <div class="logo">
-          <span class="material-symbols-outlined">shield_person</span>
-          <h1>Matatu Admin</h1>
-        </div>
+      <div class="header-container">
+        <a href="/admin-dashboard.html" class="logo">MatConnect</a>
         <div class="main-nav">
-          <a href="/admin-dashboard.html">Dashboard</a>
-          <a href="/manage-stages.html" class="active">Stages & Vehicles</a>
-          <a href="#">Users</a>
+          <ul>
+            <li><a href="/admin-dashboard.html">Dashboard</a></li>
+            <li><a href="/manage-stages.html" class="active">Stages & Vehicles</a></li>
+            <li><a href="/manage-users.html">Manage Users</a></li>
+          </ul>
         </div>
         <div class="header-actions">
-          <button class="icon-button" id="logout-btn" title="Logout">
-            <span class="material-symbols-outlined">logout</span>
-          </button>
-          <img alt="User Avatar" class="avatar" id="user-avatar" />
+          <div class="user-menu">
+            <button class="user-menu-btn">
+              <img alt="User Avatar" class="avatar" id="user-avatar" />
+              <span class="user-name">Admin</span>
+              <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+            </button>
+            <div class="user-menu-dropdown">
+              <a href="#" id="logout-link-desktop">Logout</a>
+            </div>
+          </div>
+          <button class="mobile-menu-btn"><span class="material-symbols-outlined">menu</span></button>
         </div>
-      </nav>
+      </div>
     </header>
 
     <main class="dashboard-container">
-    <!-- Left Panel: List of Stages -->
-    <section class="panel" id="stages-panel">
-      <header class="panel-header">
-        <h2>Stages</h2>
-      </header>
-      <div class="panel-body scrollable">
-        <ul class="stage-list" id="stage-list">
-          <!-- Stage items will be dynamically inserted here -->
-          <p>Loading stages...</p>
-        </ul>
-      </div>
-      <footer class="panel-footer">
-        <button class="btn btn-primary" id="add-stage-btn">
-          <span class="material-symbols-outlined">add</span>Add New Stage
-        </button>
-      </footer>
-    </section>
-
-    <!-- Right Panel: Stage Details and Vehicle Assignments -->
-    <section class="panel panel-details" id="details-panel">
-      <header class="panel-header">
-        <h2 id="details-title">Select a Stage</h2>
-        <p class="sub-header" id="details-coords">Details will appear here.</p>
-      </header>
-      <div class="panel-body" id="details-body">
-        <h3>Assigned Vehicles</h3>
-        <ul class="vehicle-list" id="assigned-vehicles-list">
-          <!-- Assigned vehicles will be dynamically inserted here -->
-          <p>Select a stage to see assigned vehicles.</p>
-        </ul>
-      </div>
-      <footer class="panel-footer" id="details-footer">
-        <div class="assign-form">
-          <select id="assign-vehicle-select" class="form-select"></select>
-          <button class="btn btn-primary" id="assign-vehicle-btn">
-            <span class="material-symbols-outlined">link</span>Assign
-          </button>
-          <button class="btn btn-secondary" id="add-vehicle-btn">
-            <span class="material-symbols-outlined">add</span>New Vehicle
-          </button>
+      <!-- Left Panel: List of Stages -->
+      <section class="panel" id="stages-panel">
+        <header class="panel-header">
+          <h2>Stages</h2>
+        </header>
+        <div class="panel-body scrollable">
+          <ul class="stage-list" id="stage-list">
+            <!-- Stage items will be dynamically inserted here -->
+            <p>Loading stages...</p>
+          </ul>
         </div>
-      </footer>
-    </section>
+        <footer class="panel-footer">
+          <button class="btn btn-primary" id="add-stage-btn">
+            <span class="material-symbols-outlined">add</span>Add New Stage
+          </button>
+        </footer>
+      </section>
+
+      <!-- Right Panel: Stage Details and Vehicle Assignments -->
+      <section class="panel panel-details" id="details-panel">
+        <header class="panel-header">
+          <h2 id="details-title">Select a Stage</h2>
+          <p class="sub-header" id="details-coords">Details will appear here.</p>
+        </header>
+        <div class="panel-body" id="details-body">
+          <h3>Assigned Vehicles</h3>
+          <ul class="vehicle-list" id="assigned-vehicles-list">
+            <!-- Assigned vehicles will be dynamically inserted here -->
+            <p>Select a stage to see assigned vehicles.</p>
+          </ul>
+        </div>
+        <footer class="panel-footer" id="details-footer">
+          <div class="assign-form">
+            <select id="assign-vehicle-select" class="form-select"></select>
+            <button class="btn btn-primary" id="assign-vehicle-btn">
+              <span class="material-symbols-outlined">link</span>Assign
+            </button>
+            <button class="btn btn-secondary" id="add-vehicle-btn">
+              <span class="material-symbols-outlined">add</span>New Vehicle
+            </button>
+          </div>
+        </footer>
+      </section>
     </main>
   </div>
 
@@ -96,6 +105,13 @@
           <div class="form-group">
             <label for="vehicle-carid-input">Internal Car ID</label>
             <input type="text" id="vehicle-carid-input" required placeholder="e.g., CAR_003 (from GPS device)" />
+          </div>
+          <div class="form-group">
+            <label for="vehicle-owner-select">Assign Owner (Optional)</label>
+            <select id="vehicle-owner-select" class="form-select">
+              <option value="">-- No Owner --</option>
+              <!-- MatAdmin users will be populated here -->
+            </select>
           </div>
         </div>
         <footer class="modal-footer">
@@ -140,47 +156,43 @@
     </div>
   </div>
 </body>
-</html>
-          <button class="btn btn-secondary" id="assign-vehicle-btn">
-            <span class="material-symbols-outlined">add</span>Assign Vehicle
-          </button>
-        </div>
-      </footer>
-    </section>
-  </div>
 
-  <!-- Modal for Adding a New Stage -->
-  <div class="modal-overlay hidden" id="add-stage-modal">
-    <div class="modal-content">
-      <header class="modal-header">
-        <h3>Add New Stage</h3>
-        <button class="icon-button" id="close-modal-btn">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </header>
-      <form id="add-stage-form">
-        <div class="modal-body">
+</html>
+
+
+<!-- Modal for Adding a New Stage -->
+<div class="modal-overlay hidden" id="add-stage-modal">
+  <div class="modal-content">
+    <header class="modal-header">
+      <h3>Add New Stage</h3>
+      <button class="icon-button" id="close-modal-btn">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+    <form id="add-stage-form">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="stage-name-input">Stage Name</label>
+          <input type="text" id="stage-name-input" required placeholder="e.g., Kenyatta Avenue" />
+        </div>
+        <div class="form-row">
           <div class="form-group">
-            <label for="stage-name-input">Stage Name</label>
-            <input type="text" id="stage-name-input" required placeholder="e.g., Kenyatta Avenue" />
+            <label for="latitude-input">Latitude</label>
+            <input type="text" id="latitude-input" required placeholder="e.g., -1.2833" />
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="latitude-input">Latitude</label>
-              <input type="text" id="latitude-input" required placeholder="e.g., -1.2833" />
-            </div>
-            <div class="form-group">
-              <label for="longitude-input">Longitude</label>
-              <input type="text" id="longitude-input" required placeholder="e.g., 36.8167" />
-            </div>
+          <div class="form-group">
+            <label for="longitude-input">Longitude</label>
+            <input type="text" id="longitude-input" required placeholder="e.g., 36.8167" />
           </div>
         </div>
-        <footer class="modal-footer">
-          <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Stage</button>
-        </footer>
-      </form>
-    </div>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Stage</button>
+      </footer>
+    </form>
   </div>
+</div>
 </body>
+
 </html>
