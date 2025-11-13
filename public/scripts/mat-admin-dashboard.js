@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function createVehicleRow(vehicle) {
+    console.log(vehicle);
     const statusClass = vehicle.status.toLowerCase() === 'online' ? 'badge-success' : 'badge-danger';
     let locationCell = vehicle.location || 'N/A';
 
@@ -75,6 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const data = await apiFetch('/api/mat-admin/dashboard-data');
       if (data.vehicles && data.vehicles.length > 0) {
+        console.log(data);
+        
         vehicleTableBody.innerHTML = data.vehicles.map(createVehicleRow).join('');
       } else {
         vehicleTableBody.innerHTML = '<tr><td colspan="3">No vehicles found.</td></tr>';

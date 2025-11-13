@@ -31,6 +31,11 @@ const Vehicle = sequelize.define("Vehicle", {
     type: DataTypes.DOUBLE,
     allowNull: true,
   },
+  isAtStage: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
 }, {
   indexes: [
     // Create a unique index on carId

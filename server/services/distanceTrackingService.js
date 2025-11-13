@@ -27,34 +27,20 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 
 /**
  * Updates the daily distance for a single vehicle.
- * @param {Vehicle} vehicle - The Sequelize vehicle instance.
+ * @param {object} vehicle - The Sequelize vehicle instance.
+ * @param {object} currentLocation - The vehicle's current location { latitude, longitude }.
  */
-async function updateVehicleDistance(vehicle) {
-  const currentLocation = await getVehicleLocation(vehicle.carId);
-
-  // Skip if vehicle is offline or has no location data
-  if (!currentLocation || !currentLocation.latitude || !currentLocation.longitude) {
-    // If the vehicle was previously online, set its last known coordinates to null
-    // to prevent incorrect distance calculation if it comes back online far away.
-    if (vehicle.lastLatitude !== null || vehicle.lastLongitude !== null) {
-      await vehicle.update({
-        lastLatitude: null,
-        lastLongitude: null,
-      });
-    }
-    return;
-  }
-
+async function updateVehicleDistance(vehicle, currentLocation) {
   const { latitude: lat2, longitude: lon2 } = currentLocation;
   const { lastLatitude: lat1, lastLongitude: lon1 } = vehicle;
 
-  // If we have previous coordinates, calculate the distance moved
+  // If we have previous coordinates from the last cycle, calculate the distance moved
   if (lat1 && lon1) {
     const distanceMoved = haversineDistance(lat1, lon1, lat2, lon2);
 
-    // Only add to total if the vehicle moved a significant distance (e.g., > 50m)
-    // This helps prevent accumulating distance from GPS drift while stationary.
-    if (distanceMoved >= 50) {
+    // If the vehicle has moved, add the distance to the daily total.
+    // The threshold was removed to ensure all small movements are counted.
+    if (distanceMoved > 0) {
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
       // Find or create a daily distance record for this vehicle for today
@@ -74,26 +60,6 @@ async function updateVehicleDistance(vehicle) {
       await dailyDistance.increment('distanceCovered', { by: distanceMoved });
     }
   }
-  
-    // Always update the vehicle's last known coordinates for the next cycle.
-    await vehicle.update({
-      lastLatitude: lat2,
-      lastLongitude: lon2,
-    });
-}
-
-/**
- * Main service function to iterate through all vehicles and update their distances.
- */
-const trackAllVehiclesDistance = async () => {
-  console.log('Running distance tracking cycle...');
-  try {
-    const vehicles = await Vehicle.findAll();
-    await Promise.all(vehicles.map(vehicle => updateVehicleDistance(vehicle)));
-    console.log('✅ Distance tracking cycle completed successfully.');
-  } catch (error) {
-    console.error('❌ Error during distance tracking cycle:', error);
-  }
 };
 
-module.exports = { trackAllVehiclesDistance };
+module.exports = { updateVehicleDistance };
