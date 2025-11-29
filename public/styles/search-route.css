@@ -3,15 +3,11 @@
 /* ------------------- */
 :root {
   --primary: #607afb;
-  --primary-light: #eef2ff;
   --bg: #f5f6f8;
   --card-bg: #ffffff;
   --border: #e5e7eb;
   --text-main: #111827;
   --text-muted: #6b7280;
-  --green: #10b981;
-  --orange: #f97316;
-  --red: #ef4444;
 }
 
 * {
@@ -26,26 +22,24 @@ body {
   color: var(--text-main);
 }
 
-.container {
-  width: 100%;
-  max-width: 768px; /* max-w-3xl */
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
 .page-wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-main.container {
-  flex-grow: 1;
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
 }
 
-/* ------------------- */
-/* Site Header         */
-/* ------------------- */
+.hidden {
+  display: none !important;
+}
+
+/* Header & Footer (Copied from feedback-page.css for consistency) */
 .site-header {
   background-color: rgba(245, 246, 248, 0.8);
   backdrop-filter: blur(4px);
@@ -58,8 +52,8 @@ main.container {
 
 .header-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   height: 100%;
 }
 
@@ -74,78 +68,57 @@ main.container {
 .main-nav ul { list-style: none; display: flex; align-items: center; gap: 2rem; margin: 0; padding: 0; }
 .main-nav a { text-decoration: none; font-weight: 500; color: var(--text-muted); transition: color 0.2s; }
 .main-nav a:hover, .main-nav a.active { color: var(--primary); }
-
 .header-actions { display: flex; align-items: center; gap: 1rem; }
 .mobile-menu-btn { background: none; border: none; padding: 0.5rem; cursor: pointer; }
 .user-profile { display: flex; align-items: center; }
 .profile-icon { height: 2.5rem; width: 2.5rem; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); cursor: pointer; }
 .logout-btn-desktop { display: none; padding: 10px 15px; border-radius: 8px; border: none; font-size: 1rem; background-color: var(--border); color: var(--text-main); cursor: pointer; }
 
-/* ------------------- */
-/* Page Header         */
-/* ------------------- */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 1.5rem;
-}
-
-.page-header h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.page-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-}
-
-.icon-button {
-  background: none;
-  border: none;
+.site-footer {
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 2rem 1.5rem;
+  font-size: 0.875rem;
   color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s, background-color 0.2s;
 }
 
-.icon-button:hover {
-  background-color: var(--primary-light);
+/* Main Content */
+.main-content {
+  flex-grow: 1;
+  padding: 2rem 1.5rem;
 }
 
-.icon-button.active {
-  color: var(--primary);
+.search-container {
+  max-width: 768px; /* max-w-3xl */
+  margin: 0 auto;
 }
 
-/* ------------------- */
-/* Filter Container    */
-/* ------------------- */
-.filter-container {
-  margin-bottom: 1.5rem;
+.search-header {
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
-.filter-container label {
+.search-header h1 {
+  font-size: 2.25rem; /* text-4xl */
+  font-weight: 900;
+}
+
+.search-header p {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 1.125rem; /* text-lg */
+}
+
+/* Form Group & Select */
+.form-group {
+  margin-bottom: 2rem;
+}
+
+.form-group label {
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0.5rem;
   display: block;
-  color: var(--text-muted);
 }
 
 .form-select {
@@ -165,95 +138,41 @@ main.container {
   background-size: 1.5em 1.5em;
 }
 
-/* ------------------- */
-/* Arrival List        */
-/* ------------------- */
-.arrival-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
+/* Results */
+#results-container h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+#origin-stages-list {
+  display: grid;
   gap: 1rem;
 }
 
-.arrival-item {
+.origin-stage-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   background-color: var(--card-bg);
-  padding: 1rem 1.5rem;
-  border-radius: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.vehicle-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.vehicle-icon {
+.origin-stage-card .material-symbols-outlined {
   font-size: 2rem;
   color: var(--primary);
 }
 
-.plate-number {
+.stage-info h4 {
   font-weight: 700;
-  font-size: 1.125rem;
 }
 
-.next-destination {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.stage-info p {
   font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.next-destination .material-symbols-outlined {
-  font-size: 1rem;
-}
-
-.status-wrapper {
-  text-align: right;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.status-approaching { background-color: #fef3c7; color: #92400e; }
-.status-approaching .status-dot { background-color: #f59e0b; }
-
-.status-arrived { background-color: #d1fae5; color: #065f46; }
-.status-arrived .status-dot { background-color: var(--green); }
-
-.status-offline, .status-no-route { background-color: #fee2e2; color: #991b1b; }
-.status-offline .status-dot, .status-no-route .status-dot { background-color: var(--red); }
-
-.eta {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-top: 0.25rem;
-}
-
-.info-message, .error-message {
-  text-align: center;
-  padding: 2rem;
   color: var(--text-muted);
 }
 

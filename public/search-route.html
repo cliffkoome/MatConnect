@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Route</title>
+  <link rel="stylesheet" href="styles/search-route.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
+  <script src="./scripts/search-route.js" defer></script>
+</head>
+
+<body>
+  <div class="page-wrapper">
+    <header class="site-header">
+      <div class="container header-content">
+        <a class="logo" href="index.html">MatConnect</a>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="select-stage.html">Live ETAs</a></li>
+            <li><a href="search-route.html" class="active">Search Route</a></li>
+            <li><a href="feedback-page.html">Feedback</a></li>
+          </ul>
+        </nav>
+        <div class="header-actions">
+          <div class="user-profile">
+            <img alt="User profile picture" class="profile-icon" src="./images/pfp.jpg"
+              onclick="location='user-profile.html'">
+          </div>
+          <button class="mobile-menu-btn">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="search-container">
+        <div class="search-header">
+          <h1>Find Your Route</h1>
+          <p>Select your destination to see available matatus and where to board them.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="destination-select">I want to go to...</label>
+          <select id="destination-select" class="form-select">
+            <option value="" disabled selected>Select a destination</option>
+          </select>
+        </div>
+
+        <div id="results-container" class="hidden">
+          <h2>Available Routes</h2>
+          <div id="origin-stages-list">
+            <!-- Origin stages will be populated here -->
+          </div>
+        </div>
+
+        <div id="no-results-message" class="hidden">
+          <p>No routes found for the selected destination. Please try another.</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2025 MatConnect. All rights reserved.</p>
+    </footer>
+  </div>
+</body>
+</html>

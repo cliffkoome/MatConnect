@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const accessToken = localStorage.getItem('accessToken');
+  const mainNavList = document.querySelector('.main-nav ul');
   const ratingStarsContainer = document.querySelector('.rating-stars');
   const profileIcon = document.querySelector('.profile-icon');
 
@@ -13,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
   const mainNav = document.querySelector('.main-nav');
-  const navList = mainNav.querySelector('ul');
   const headerActions = document.querySelector('.header-actions');
 
   const apiFetch = async (url, options = {}) => {
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutUser();
   });
   logoutLi.appendChild(logoutMobileLink);
-  navList.appendChild(logoutLi);
+  mainNavList.appendChild(logoutLi);
 
   // Add logout button for desktop view
   const logoutDesktopBtn = document.createElement('button');

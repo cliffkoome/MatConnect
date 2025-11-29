@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const stageGrid = document.getElementById('stage-grid');
   const accessToken = localStorage.getItem('accessToken');
-
   const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
   const mainNav = document.querySelector('.main-nav');
   const headerActions = document.querySelector('.header-actions');
@@ -13,6 +12,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // --- API Helper ---
+  const apiFetch = async (url, options = {}) => {
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    };
+    const response = await fetch(url, { ...defaultOptions, ...options });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        window.location.href = '/login.html';
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'API request failed');
+    }
+    return response.json();
+  };
   // --- Mobile Menu Toggle ---
   mobileMenuBtn.addEventListener('click', () => {
     mainNav.classList.toggle('is-active');
@@ -47,30 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetches stages from the API and displays them
   async function fetchAndDisplayStages() {
     try {
-      const response = await fetch('/api/stages', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch stages.');
-      }
-
-      const stages = await response.json();
+      const stages = await apiFetch('/api/stages');
       stageGrid.innerHTML = ''; // Clear the "Loading..." message
 
       if (stages.length > 0) {
-        stages.forEach(stage => {
-          const card = createStageCard(stage);
-          stageGrid.appendChild(card);
-        });
+        stages.map(createStageCard).forEach(card => stageGrid.appendChild(card));
       } else {
         stageGrid.innerHTML = '<p>No stages are available at the moment.</p>';
       }
     } catch (error) {
-      console.error('Error:', error);
-      stageGrid.innerHTML = '<p class="error-message">Could not load stages. Please try again later.</p>';
+      console.error('Error filtering stages:', error);
+      alert('Could not apply filter. Please try again.');
     }
   }
 
@@ -126,5 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch the profile image when the page loads
   fetchProfileImage();
 
+  // Initialize page
   fetchAndDisplayStages();
 });

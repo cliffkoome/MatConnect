@@ -1,20 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   const arrivalList = document.querySelector('.arrival-list');
-  const avatar = document.querySelector('.avatar');
-  const stageHeader = document.querySelector('.page-header h2');
+  const stageHeader = document.getElementById('stage-name-header');
   const accessToken = localStorage.getItem('accessToken');
-  const logoutBtn = document.getElementById('logout-btn');
   const notificationBell = document.getElementById('notification-bell');
   const notificationIcon = notificationBell.querySelector('.material-symbols-outlined');
   const profileIcon = document.querySelector('.profile-icon');
+  const destinationSelect = document.getElementById('destination-select');
 
-  avatar.addEventListener('click', () => {
-    window.location.href = '/user-profile.html';
-  });
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', logoutUser);
-  }
+  let allArrivals = []; // To store the full list of arrivals before filtering
   if (notificationBell) {
     notificationBell.addEventListener('click', toggleSubscription);
   }
@@ -34,17 +27,50 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // --- Mobile Menu & Logout ---
+  const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+  const mainNav = document.querySelector('.main-nav');
+  const headerActions = document.querySelector('.header-actions');
+
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => mainNav.classList.toggle('is-active'));
+  }
+
+  function logoutUser() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('role');
+    window.location.href = '/login.html';
+  }
+
+  // Add logout to mobile nav
+  const navList = mainNav.querySelector('ul');
+  const logoutLi = document.createElement('li');
+  logoutLi.innerHTML = `<a href="#" class="logout-link">Logout</a>`;
+  logoutLi.addEventListener('click', (e) => { e.preventDefault(); logoutUser(); });
+  navList.appendChild(logoutLi);
+
+  // Add logout to desktop header
+  const logoutDesktopBtn = document.createElement('button');
+  logoutDesktopBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i>';
+  logoutDesktopBtn.title = 'Logout';
+  logoutDesktopBtn.classList.add('logout-btn-desktop');
+  logoutDesktopBtn.addEventListener('click', logoutUser);
+  if (headerActions) {
+    headerActions.insertBefore(logoutDesktopBtn, headerActions.querySelector('.user-profile'));
+  }
+
   function createArrivalItem(vehicle) {
     const statusClass = vehicle.status.toLowerCase().replace(' ', '-');
     return `
       <li class="arrival-item">
         <div class="vehicle-info">
-          <div class="vehicle-icon-wrapper">
-            <span class="material-symbols-outlined">directions_bus</span>
-          </div>
+          <span class="material-symbols-outlined vehicle-icon">directions_bus</span>
           <div>
             <p class="plate-number">${vehicle.plateNumber}</p>
-            <p class="eta">ETA: ${vehicle.eta}</p>
+            <p class="next-destination">
+              <span class="material-symbols-outlined">trending_flat</span>
+              Next: <strong>${vehicle.nextDestination || 'N/A'}</strong>
+            </p>
           </div>
         </div>
         <div class="status-wrapper">
@@ -52,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="status-dot"></span>
             ${vehicle.status}
           </span>
+          <p class="eta">${vehicle.eta}</p>
         </div>
       </li>
     `;
@@ -70,12 +97,48 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = await response.json();
+      allArrivals = data.arrivals; // Store the full list
       stageHeader.textContent = data.stageName;
-      arrivalList.innerHTML = data.arrivals.map(createArrivalItem).join('');
+
+      // Display initial (unfiltered) list
+      displayFilteredArrivals();
 
     } catch (error) {
       console.error('Error:', error);
       arrivalList.innerHTML = '<li class="error-message">Could not load arrival times. Please try again later.</li>';
+    }
+  }
+
+  async function populateDestinationFilter() {
+    try {
+      const destinations = await fetch(`/api/eta/${stageId}/destinations`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      }).then(res => res.json());
+
+      destinationSelect.innerHTML = '<option value="all">-- All Destinations --</option>'; // Reset
+      destinations.forEach(dest => {
+        const option = document.createElement('option');
+        option.value = dest.name;
+        option.textContent = dest.name;
+        destinationSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Error fetching possible destinations:', error);
+    }
+  }
+
+  function displayFilteredArrivals() {
+    const selectedDestination = destinationSelect.value;
+    let filteredArrivals = allArrivals;
+
+    if (selectedDestination && selectedDestination !== 'all') {
+      filteredArrivals = allArrivals.filter(vehicle => vehicle.nextDestination === selectedDestination);
+    }
+
+    if (filteredArrivals.length > 0) {
+      arrivalList.innerHTML = filteredArrivals.map(createArrivalItem).join('');
+    } else {
+      arrivalList.innerHTML = '<li class="info-message">No vehicles currently heading to that destination.</li>';
     }
   }
 
@@ -156,12 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fetch data immediately and then every 30 seconds
   fetchAndDisplayEtas();
+  populateDestinationFilter();
   fetchSubscriptionStatus();
   setInterval(fetchAndDisplayEtas, 30000);
 
-  async function logoutUser() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('role');
-    window.location.href = '/login.html';
-  }
+  destinationSelect.addEventListener('change', displayFilteredArrivals);
 });

@@ -2,79 +2,69 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Matatu Arrival System</title>
-    <link rel="stylesheet" href="styles/stage-info.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
-    <script src="./scripts/stage-info.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Arrivals</title>
+  <link rel="stylesheet" href="./styles/stage-info.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/8c27d1b0fd.js" crossorigin="anonymous"></script>
+  <script src="./scripts/stage-info.js" defer></script>
 </head>
 
-<body class="dark">
-    <div class="page-wrapper">
-        <header class="site-header">
-            <nav class="container navbar">
-                <div class="logo">
-                    <h1>MatConnect</h1>
-                </div>
-                <div class="main-nav">
-                    <a href="select-stage.html" class="active">Stages</a>
-                    <a href="feedback-page.html">Feedback</a>
-                    <a href="#" id="logout-btn">Logout</a>
-                </div>
-                <div class="header-actions">
-                    <button class="icon-button" id="notification-bell" title="Toggle SMS Alerts">
-                        <span class="material-symbols-outlined">notifications_off</span>
-                    </button>
-                    <button class="icon-button primary-btn btn-2" id="logout-btn" title="Logout">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                    </button>
-                    <img alt="User Avatar" class="avatar profile-icon" src="images/pfp.jpg" />
-                </div>
-            </nav>
-        </header>
+<body>
+  <div class="page-wrapper">
+    <header class="site-header">
+      <div class="container header-content">
+        <a class="logo" href="index.html">MatConnect</a>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="select-stage.html" class="active">Pickup Points</a></li>
+            <li><a href="feedback-page.html">Feedback</a></li>
+          </ul>
+        </nav>
+        <div class="header-actions">
+          <div class="user-profile">
+            <img alt="User profile picture" class="profile-icon" src="./images/pfp.jpg"
+              onclick="location='user-profile.html'">
+          </div>
+          <button class="mobile-menu-btn">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+        </div>
+      </div>
+    </header>
 
-        <main class="container">
-            <div class="page-header">
-                <h2>Kenyatta Avenue Stage</h2>
-                <p>Real-time arrivals for your next ride.</p>
-            </div>
+    <main class="container">
+      <div class="page-header">
+        <h2 id="stage-name-header">Loading Stage...</h2>
+        <div class="page-header-actions">
+          <button class="icon-button" id="notification-bell" title="Toggle SMS alerts">
+            <span class="material-symbols-outlined">notifications_off</span>
+          </button>
+        </div>
+      </div>
 
-            <div class="card arrival-card" id="arrival-card">
-                <div class="card-header">
-                    <h3>Upcoming Matatus</h3>
-                </div>
-                <ul class="arrival-list">
-                    <li class="arrival-item">
-                        <div class="vehicle-info">
-                            <div class="vehicle-icon-wrapper">
-                                <p>Loading arrival times...</p>
-                            </div>
-                    </li>
-                </ul>
-            </div>
+      <div class="filter-container">
+        <label for="destination-select">Filter by Destination</label>
+        <select id="destination-select" class="form-select">
+          <option value="all">-- All Destinations --</option>
+          <!-- Options will be populated by JavaScript -->
+        </select>
+      </div>
 
-            <!-- <div class="card feedback-card">
-                <h3>Passenger Feedback</h3>
-                <p>Help us improve your experience.</p>
-                <button class="btn btn-primary">
-                    <span class="material-symbols-outlined">qr_code_scanner</span>
-                    Scan to Give Feedback
-                </button>
-            </div> -->
-        </main>
+      <ul class="arrival-list">
+        <li class="info-message">Loading live arrivals...</li>
+      </ul>
+    </main>
 
-        <footer class="site-footer">
-            <div class="container">
-                <p>© 2025 MatConnect. All rights reserved.</p>
-            </div>
-        </footer>
-    </div>
+    <footer class="site-footer" style="text-align: center; padding: 2rem; color: #6b7280; font-size: 0.875rem;">
+      <p>© 2025 MatConnect. All rights reserved.</p>
+    </footer>
+  </div>
 </body>
 
 </html>
