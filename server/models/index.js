@@ -6,10 +6,20 @@ const DailyDistance = require('./DailyDistance');
 const DailyTrip = require('./DailyTrip');
 const Feedback = require('./Feedback');
 
-// A Stage can have many vehicles, and a Vehicle can belong to many stages (in different routes)
-// This creates a join table `StageVehicles`
-Stage.belongsToMany(Vehicle, { through: 'StageVehicles' });
-Vehicle.belongsToMany(Stage, { through: 'StageVehicles' });
+// A Vehicle has an ordered route of Stages. This join table includes a sequence.
+const VehicleRoute = sequelize.define('VehicleRoute', {
+  sequence: {
+    type: sequelize.Sequelize.INTEGER,
+    allowNull: false,
+  }
+}, { timestamps: false });
+
+Vehicle.belongsToMany(Stage, {
+  through: VehicleRoute,
+  as: 'RouteStages', // Use a clear alias
+  foreignKey: 'vehicleId'
+});
+Stage.belongsToMany(Vehicle, { through: VehicleRoute, foreignKey: 'stageId' });
 
 // A User can subscribe to many stages for alerts, and a Stage can have many subscribers.
 // This creates a join table `UserStageSubscriptions`

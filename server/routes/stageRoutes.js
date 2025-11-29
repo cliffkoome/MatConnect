@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   getAllStages,
+  findStagesByDestination,
   getSubscriptionStatus,
   subscribeToStage,
   unsubscribeFromStage
@@ -10,6 +11,9 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 // This route is for any authenticated user (Passenger or Admin)
 router.get('/', authMiddleware(), getAllStages);
+
+// Find stages that have routes to a given destination
+router.get('/by-destination', authMiddleware(), findStagesByDestination);
 
 // Routes for managing SMS alert subscriptions
 router.get('/:stageId/subscription', authMiddleware(), getSubscriptionStatus);

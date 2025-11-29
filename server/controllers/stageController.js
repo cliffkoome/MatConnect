@@ -1,4 +1,5 @@
-const { Stage, User } = require('../models');
+const { Stage, User, Vehicle, sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 /**
  * Fetches all stages from the database.
@@ -12,6 +13,41 @@ const getAllStages = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error fetching stages', error: error.message });
   }
+};
+
+/**
+ * Finds all stages that have vehicles routing to a specific destination.
+ */
+const findStagesByDestination = async (req, res) => {
+  try {
+    const { destinationId } = req.query;
+
+    if (!destinationId) {
+      return res.status(400).json({ message: 'Destination ID is required.' });
+    }
+
+    // Find all vehicles that have the destinationId in their route.
+    const vehiclesOnRoute = await Vehicle.findAll({
+      attributes: ['id'],
+      include: [{
+        model: Stage,
+        as: 'RouteStages',
+        where: { id: destinationId },
+        attributes: [], // We don't need stage attributes here
+        through: { attributes: [] }
+      }]
+    });
+
+    const vehicleIds = vehiclesOnRoute.map(v => v.id);
+
+    // Find all unique stages served by these vehicles, excluding the destination itself.
+    const originStages = await Stage.findAll({
+      include: [{ model: Vehicle, where: { id: { [Op.in]: vehicleIds } }, attributes: [], through: { attributes: [] } }],
+      where: { id: { [Op.ne]: destinationId } }
+    });
+
+    res.status(200).json(originStages);
+  } catch (error) { res.status(500).json({ message: 'Error finding stages by destination', error: error.message }); }
 };
 
 const getSubscriptionStatus = async (req, res) => {
@@ -72,4 +108,4 @@ const unsubscribeFromStage = async (req, res) => {
 };
 
 
-module.exports = { getAllStages, getSubscriptionStatus, subscribeToStage, unsubscribeFromStage };
+module.exports = { getAllStages, findStagesByDestination, getSubscriptionStatus, subscribeToStage, unsubscribeFromStage };

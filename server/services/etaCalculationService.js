@@ -1,6 +1,7 @@
 const { getVehicleLocation } = require('./firebaseService');
 const { getDirectionsInfo } = require('./googleMapsService');
 const { calculateBearing } = require('./geolocationService');
+const { Vehicle, Stage, sequelize } = require('../models');
 
 /**
  * Calculates ETAs for all vehicles assigned to a specific stage.
@@ -13,7 +14,14 @@ const calculateEtasForStage = async (stage, vehicleLocations) => {
     return [];
   }
 
-  const vehicleEtas = await Promise.all(stage.Vehicles.map(async (vehicle) => {
+  // Eager load all vehicle routes to avoid N+1 queries inside the loop
+  const vehiclesWithRoutes = await Vehicle.findAll({
+    where: { id: stage.Vehicles.map(v => v.id) }, // Only process vehicles assigned to the current stage
+    include: { model: Stage, as: 'RouteStages', through: { attributes: ['sequence'] } },
+    order: [[sequelize.literal('`RouteStages->VehicleRoute`.`sequence`'), 'ASC']]
+  });
+
+  const vehicleEtas = await Promise.all(vehiclesWithRoutes.map(async (vehicle) => {
     const carId = vehicle.carId;
     const currentVehicleLocation = vehicleLocations.get(vehicle.id);
 
@@ -62,13 +70,42 @@ const calculateEtasForStage = async (stage, vehicleLocations) => {
       }
     }
 
+    // --- New "Next Destination" Logic ---
+    let nextDestination = 'N/A';
+    const routeStages = vehicle.RouteStages;
+    if (routeStages && routeStages.length > 1) {
+      const currentStageIndex = routeStages.findIndex(s => s.id === stage.id);
+
+      if (currentStageIndex !== -1) {
+        // If vehicle is approaching or at the current stage, the next destination is the next stage in sequence.
+        if (status === 'Approaching' || status === 'Arrived') {
+          if (currentStageIndex < routeStages.length - 1) {
+            // Moving forward along the route
+            nextDestination = routeStages[currentStageIndex + 1].name;
+          } else {
+            // Reached the end, next is the second to last stage (turning back)
+            nextDestination = routeStages[currentStageIndex - 1].name;
+          }
+        } else { // status is 'Departed'
+          if (currentStageIndex > 0) {
+            // Moving backward along the route
+            nextDestination = routeStages[currentStageIndex - 1].name;
+          } else {
+            // Reached the start, next is the second stage (turning forward)
+            nextDestination = routeStages[currentStageIndex + 1].name;
+          }
+        }
+      }
+    }
+
     return {
       id: vehicle.id,
       carId: carId,
       plateNumber: vehicle.plateNumber,
       // Only show ETA if the vehicle is actually approaching
       eta: status === 'Approaching' ? duration.text : (status === 'Arrived' ? 'Arrived' : 'N/A'),
-      status: status
+      status: status,
+      nextDestination: nextDestination,
     };
   }));
 

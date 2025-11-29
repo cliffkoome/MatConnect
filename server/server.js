@@ -68,7 +68,8 @@ const runEtaUpdateCycle = async () => {
           acc[vehicle.carId] = {
             plateNumber: vehicle.plateNumber,
             eta: vehicle.eta,
-            status: vehicle.status
+            status: vehicle.status,
+            nextDestination: vehicle.nextDestination
           };
           return acc;
         }, {});

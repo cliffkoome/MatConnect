@@ -1,5 +1,5 @@
-const { Stage, Vehicle, User, Feedback } = require('../models');
 const bcrypt = require("bcrypt");
+const { Stage, Vehicle, User, Feedback, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { getVehicleLocation } = require('../services/firebaseService');
 const { getLocationName } = require('../services/googleMapsService');
@@ -9,7 +9,13 @@ const { getLocationName } = require('../services/googleMapsService');
 const getAllStages = async (req, res) => {
   try {
     const stages = await Stage.findAll({
-      include: { model: Vehicle, through: { attributes: [] } },
+      include: {
+        model: Vehicle,
+        as: 'Vehicles', // Sequelize defaults to plural model name if no 'as' is given
+        through: {
+          attributes: ['sequence'] // Include sequence for ordering
+        }
+      },
       order: [['name', 'ASC']]
     });
     res.status(200).json(stages);
@@ -77,7 +83,16 @@ const assignVehicleToStage = async (req, res) => {
       return res.status(404).json({ message: 'Stage or Vehicle not found' });
     }
 
-    await stage.addVehicle(vehicle);
+    // Find the current max sequence for this vehicle's route
+    const maxSequence = await sequelize.models.VehicleRoute.max('sequence', {
+      where: { vehicleId: vehicle.id }
+    });
+
+    const nextSequence = (maxSequence || 0) + 1;
+
+    // Use the custom join table to add the stage with the correct sequence
+    await vehicle.addRouteStage(stage, { through: { sequence: nextSequence } });
+
     res.status(200).json({ message: 'Vehicle assigned to stage successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error assigning vehicle', error: error.message });
@@ -90,7 +105,12 @@ const removeVehicleFromStage = async (req, res) => {
     const stage = await Stage.findByPk(stageId);
     const vehicle = await Vehicle.findByPk(vehicleId);
     if (!stage || !vehicle) return res.status(404).json({ message: 'Stage or Vehicle not found' });
-    await stage.removeVehicle(vehicle);
+
+    // Use the custom alias to remove the specific association
+    await vehicle.removeRouteStage(stage);
+
+    // Note: For a more robust system, you might want to re-sequence the remaining stages,
+    // but for now, simple removal is sufficient.
     res.status(200).json({ message: 'Vehicle unassigned successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error unassigning vehicle', error: error.message });
