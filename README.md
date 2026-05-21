@@ -123,7 +123,7 @@ A custom middleware (`authMiddleware.js`) protects backend routes by verifying t
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/GRP-A-ISP-cliffkoome.git
+    git clone https://github.com/cliffkoome/MatConnect
     cd GRP-A-ISP-cliffkoome
     ```
 
