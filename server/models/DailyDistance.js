@@ -26,7 +26,16 @@ const DailyDistance = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-  }
+  },
+  {
+    indexes: [
+      {
+        unique: true,
+        fields: ["vehicleId", "date"],
+      },
+      { fields: ["vehicleId"] },
+    ],
+  },
 );
 
 module.exports = DailyDistance;
