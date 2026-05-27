@@ -1,44 +1,40 @@
-require('dotenv').config();
-const axios = require('axios');
+require("dotenv").config();
+const AfricasTalking = require("africastalking");
 
-const options = {
+const credentials = {
   apiKey: process.env.AFRICAS_TALKING_API_KEY,
   username: process.env.AFRICAS_TALKING_USERNAME,
 };
 
-const sendSms = async (phoneNumber, message) => {
-  const { apiKey, username } = options;
+// Check for credentials early and initialize the SDK.
+let sms;
+if (credentials.apiKey && credentials.username) {
+  const at = AfricasTalking(credentials);
+  sms = at.SMS;
+} else {
+  console.warn(
+    "Africa's Talking credentials not set. SMS service is disabled.",
+  );
+}
 
-  if (!apiKey || !username) {
-    console.log("Africa's Talking credentials not set. Skipping SMS.");
-    return Promise.resolve({ status: 'skipped' });
+const sendSms = async (phoneNumber, message) => {
+  // If the SDK was not initialized, skip sending.
+  if (!sms) {
+    console.log("Skipping SMS: Africa's Talking service is not configured.");
+    return { status: "skipped" };
   }
 
   try {
-    const data = new URLSearchParams({
-      username: username,
-      to: phoneNumber,
+    const response = await sms.send({
+      to: [phoneNumber], // The SDK expects an array of numbers
       message: message,
-    }).toString();
+    });
 
-    const response = await axios.post(
-      'https://api.sandbox.africastalking.com/version1/messaging',
-      data,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'apiKey': apiKey,
-        },
-      }
-    );
-
-    console.log('SMS sent successfully:', response.data);
-    return response.data;
+    console.log("SMS sent successfully:", response);
+    return response;
   } catch (error) {
-    const errorMessage = error.response
-      ? JSON.stringify(error.response.data)
-      : error.toString();
-    console.error(`Error sending SMS: ${errorMessage}`);
+    // The SDK provides a more structured error object
+    console.error(`Error sending SMS: ${error.toString()}`);
     throw error;
   }
 };
