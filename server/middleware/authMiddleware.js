@@ -1,9 +1,10 @@
 const jwt = require("jsonwebtoken");
+const { User } = require("../models");
 
 const authMiddleware = (role) => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const authHeader = req.header("Authorization");
-    
+
     if (!authHeader) {
       return res
         .status(401)
@@ -20,6 +21,18 @@ const authMiddleware = (role) => {
     try {
       const verified = jwt.verify(token, process.env.JWT_SECRET);
       req.user = verified;
+
+      // Check claims directly from the token to avoid DB lookups on every request.
+      if (verified.disabled) {
+        return res.status(403).json({ message: "Account disabled" });
+      }
+
+      // Check if the token was issued before the user's tokens were last invalidated.
+      if (verified.iat * 1000 < verified.tokensValidFrom) {
+        // tokensValidFrom is a timestamp in milliseconds
+        return res.status(401).json({ message: "Token has been invalidated" });
+      }
+
       if (role && req.user.role !== role) {
         return res
           .status(403)

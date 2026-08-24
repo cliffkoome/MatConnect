@@ -9,7 +9,7 @@ const User = sequelize.define(
     email: { type: DataTypes.STRING, allowNull: false },
     password: {
       type: DataTypes.STRING,
-      allowNull: true // Allow null for Google-based signups
+      allowNull: true, // Allow null for Google-based signups
     },
     role: {
       type: DataTypes.ENUM("Passenger", "Admin", "MatAdmin"),
@@ -40,7 +40,12 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false,
-    }
+    },
+    tokensValidFrom: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW, // Default to current timestamp
+    },
   },
   {
     timestamps: true,
@@ -56,7 +61,7 @@ const User = sequelize.define(
         name: "idx_users_googleid",
       },
     ],
-  }
+  },
 );
 
 module.exports = User;

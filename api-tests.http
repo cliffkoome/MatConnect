@@ -1,0 +1,549 @@
+# ============================================================
+# Matatu ETA API — REST Client Tests
+# VS Code extension: humao.rest-client
+# ============================================================
+# Usage:
+#   1. Set @baseUrl and credentials in the Variables section.
+#   2. Run each request with "Send Request" (click the link above each block).
+#   3. Copy tokens from responses into the variables below.
+# ============================================================
+
+
+### ─── Variables ────────────────────────────────────────────
+@baseUrl        = http://localhost:5000/api
+@adminToken     = PASTE_ADMIN_ACCESS_TOKEN_HERE
+@matAdminToken  = PASTE_MAT_ADMIN_ACCESS_TOKEN_HERE
+@passengerToken = PASTE_PASSENGER_ACCESS_TOKEN_HERE
+@stageId        = 1
+@vehicleId      = 1
+@userId         = 2
+@resetUserId    = 1
+@resetToken     = PASTE_RESET_TOKEN_HERE
+@tempToken      = PASTE_TEMP_2FA_TOKEN_HERE
+
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║                    AUTH ROUTES                           ║
+# ╚══════════════════════════════════════════════════════════╝
+
+### 1. Register a new user (first user becomes Admin)
+# POST /api/auth/register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+
+###
+
+### 2. Login — returns accessToken + sets refreshToken cookie
+# POST /api/auth/login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+
+###
+
+### 3. Get current Admin profile
+# GET /api/auth/me/admin   (requires Admin role)
+GET {{baseUrl}}/auth/me/admin
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 4. Get current Passenger profile
+# GET /api/auth/me/passenger   (requires Passenger role)
+GET {{baseUrl}}/auth/me/passenger
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 5. Get current MatAdmin profile
+# GET /api/auth/me/mat-admin   (requires MatAdmin role)
+GET {{baseUrl}}/auth/me/mat-admin
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 6. Update profile (name and / or phone number)
+# PUT /api/auth/me   (any authenticated role)
+PUT {{baseUrl}}/auth/me
+Authorization: Bearer {{passengerToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "phoneNumber": "0712345678"
+}
+
+
+###
+
+### 7. Refresh access token
+# POST /api/auth/refresh-token
+# Cookie refreshToken must be present (set automatically after login).
+# The expired / current access token is still required in the header.
+POST {{baseUrl}}/auth/refresh-token
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 8. Logout
+# POST /api/auth/logout   (any authenticated role)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 9. Request password reset email
+# POST /api/auth/requestPasswordReset
+POST {{baseUrl}}/auth/requestPasswordReset
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+
+###
+
+### 10. Reset password using token from email
+# POST /api/auth/resetpassword/:id/:token
+POST {{baseUrl}}/auth/resetpassword/{{resetUserId}}/{{resetToken}}
+Content-Type: application/json
+
+{
+  "password": "newpassword123"
+}
+
+
+###
+
+### 11. 2FA — Generate secret & QR code (step 1 of setup)
+# POST /api/auth/2fa/setup
+POST {{baseUrl}}/auth/2fa/setup
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 12. 2FA — Verify TOTP token to enable 2FA (step 2 of setup)
+# POST /api/auth/2fa/verify
+POST {{baseUrl}}/auth/2fa/verify
+Authorization: Bearer {{passengerToken}}
+Content-Type: application/json
+
+{
+  "token": "123456"
+}
+
+
+###
+
+### 13. 2FA — Disable 2FA
+# POST /api/auth/2fa/disable
+POST {{baseUrl}}/auth/2fa/disable
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 14. 2FA — Complete login with TOTP code
+# POST /api/auth/2fa/login
+# tempToken is returned from a normal /login when twoFactorRequired: true
+POST {{baseUrl}}/auth/2fa/login
+Content-Type: application/json
+
+{
+  "tempToken": "{{tempToken}}",
+  "token": "123456"
+}
+
+
+###
+
+### 15. Google OAuth — Initiate sign-in (opens browser redirect)
+# GET /api/auth/google
+GET {{baseUrl}}/auth/google
+
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║                    ETA ROUTES                            ║
+# ╚══════════════════════════════════════════════════════════╝
+
+### 16. Get ETA for a stage (any authenticated role)
+# GET /api/eta/:stageId
+GET {{baseUrl}}/eta/{{stageId}}
+Authorization: Bearer {{passengerToken}}
+
+
+### 17. Get ETA — stage not found (expect 404)
+GET {{baseUrl}}/eta/99999
+Authorization: Bearer {{passengerToken}}
+
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║                   STAGE ROUTES                           ║
+# ╚══════════════════════════════════════════════════════════╝
+
+### 18. Get all stages (any authenticated role)
+# GET /api/stages
+GET {{baseUrl}}/stages
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 19. Get subscription status for a stage
+# GET /api/stages/:stageId/subscription
+GET {{baseUrl}}/stages/{{stageId}}/subscription
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 20. Subscribe to SMS alert for a stage
+# POST /api/stages/:stageId/subscribe
+POST {{baseUrl}}/stages/{{stageId}}/subscribe
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 21. Unsubscribe from SMS alert for a stage
+# POST /api/stages/:stageId/unsubscribe
+POST {{baseUrl}}/stages/{{stageId}}/unsubscribe
+Authorization: Bearer {{passengerToken}}
+
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║                   ADMIN ROUTES                           ║
+# ║         All endpoints require Admin role                 ║
+# ╚══════════════════════════════════════════════════════════╝
+
+### 22. Admin — Get live vehicle dashboard data
+# GET /api/admin/dashboard-data
+GET {{baseUrl}}/admin/dashboard-data
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 23. Admin — Get all users (supports search and role filter)
+# GET /api/admin/users
+GET {{baseUrl}}/admin/users?q=&role=&limit=25&offset=0
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 24. Admin — Create a new Admin or MatAdmin user
+# POST /api/admin/users
+POST {{baseUrl}}/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "New Mat Admin",
+  "email": "matadmin@example.com",
+  "password": "password123",
+  "role": "MatAdmin"
+}
+
+
+###
+
+### 25. Admin — Block / unblock a user
+# PUT /api/admin/users/:id
+PUT {{baseUrl}}/admin/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "disabled": true
+}
+
+
+###
+
+### 26. Admin — Delete a user
+# DELETE /api/admin/users/:id
+DELETE {{baseUrl}}/admin/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 27. Admin — Get all feedback (paginated)
+# GET /api/admin/feedback
+GET {{baseUrl}}/admin/feedback?limit=10&offset=0
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 28. Admin — Get all MatAdmins (for dropdown)
+# GET /api/admin/mat-admins
+GET {{baseUrl}}/admin/mat-admins
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 29. Admin — Get all stages (paginated)
+# GET /api/admin/stages
+GET {{baseUrl}}/admin/stages?limit=25&offset=0
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 30. Admin — Create a stage
+# POST /api/admin/stages
+POST {{baseUrl}}/admin/stages
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Westlands Stage",
+  "latitude": -1.2672,
+  "longitude": 36.8062
+}
+
+
+###
+
+### 31. Admin — Get all vehicles (paginated)
+# GET /api/admin/vehicles
+GET {{baseUrl}}/admin/vehicles?limit=25&offset=0
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 32. Admin — Create a vehicle
+# POST /api/admin/vehicles
+POST {{baseUrl}}/admin/vehicles
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "carId": "CAR_001",
+  "plateNumber": "KBA 001A",
+  "ownerId": 2
+}
+
+
+###
+
+### 33. Admin — Delete a vehicle
+# DELETE /api/admin/vehicles/:id
+DELETE {{baseUrl}}/admin/vehicles/{{vehicleId}}
+Authorization: Bearer {{adminToken}}
+
+
+###
+
+### 34. Admin — Assign vehicle to a stage
+# POST /api/admin/stages/assign-vehicle
+POST {{baseUrl}}/admin/stages/assign-vehicle
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "stageId": 1,
+  "vehicleId": 1
+}
+
+
+###
+
+### 35. Admin — Remove vehicle from a stage
+# DELETE /api/admin/stages/:stageId/vehicles/:vehicleId
+DELETE {{baseUrl}}/admin/stages/1/vehicles/1
+Authorization: Bearer {{adminToken}}
+
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║                  FEEDBACK ROUTES                         ║
+# ║         All endpoints require Passenger role             ║
+# ╚══════════════════════════════════════════════════════════╝
+
+### 36. Passenger — Get all vehicles (for feedback form dropdown)
+# GET /api/feedback/vehicles
+GET {{baseUrl}}/feedback/vehicles
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 37. Passenger — Submit feedback for a vehicle
+# POST /api/feedback
+POST {{baseUrl}}/feedback
+Authorization: Bearer {{passengerToken}}
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "rating": 4,
+  "comment": "Punctual and clean matatu."
+}
+
+
+###
+
+### 38. Feedback — validation error (rating out of range, expect 400)
+POST {{baseUrl}}/feedback
+Authorization: Bearer {{passengerToken}}
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "rating": 6,
+  "comment": "This should fail."
+}
+
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║                 MAT-ADMIN ROUTES                         ║
+# ║         All endpoints require MatAdmin role              ║
+# ╚══════════════════════════════════════════════════════════╝
+
+### 39. MatAdmin — Dashboard summary (totals for today)
+# GET /api/mat-admin/dashboard-summary
+GET {{baseUrl}}/mat-admin/dashboard-summary
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 40. MatAdmin — Live vehicle status dashboard
+# GET /api/mat-admin/dashboard-data
+GET {{baseUrl}}/mat-admin/dashboard-data
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 41. MatAdmin — Vehicle stats with daily distance, trips & feedback
+# GET /api/mat-admin/vehicle-stats
+GET {{baseUrl}}/mat-admin/vehicle-stats
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 42. MatAdmin — Fleet aggregate chart data (daily)
+# GET /api/mat-admin/fleet-aggregate-data?period=daily|weekly|monthly
+GET {{baseUrl}}/mat-admin/fleet-aggregate-data?period=daily
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 43. MatAdmin — Fleet aggregate chart data (weekly)
+GET {{baseUrl}}/mat-admin/fleet-aggregate-data?period=weekly
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 44. MatAdmin — Fleet aggregate chart data (monthly)
+GET {{baseUrl}}/mat-admin/fleet-aggregate-data?period=monthly
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 45. MatAdmin — Chart data for a specific vehicle (daily)
+# GET /api/mat-admin/vehicles/:vehicleId/chart-data?period=daily|weekly|monthly
+GET {{baseUrl}}/mat-admin/vehicles/{{vehicleId}}/chart-data?period=daily
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 46. MatAdmin — Chart data for a specific vehicle (weekly)
+GET {{baseUrl}}/mat-admin/vehicles/{{vehicleId}}/chart-data?period=weekly
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 47. MatAdmin — Chart data for a specific vehicle (monthly)
+GET {{baseUrl}}/mat-admin/vehicles/{{vehicleId}}/chart-data?period=monthly
+Authorization: Bearer {{matAdminToken}}
+
+
+###
+
+### 48. MatAdmin — Create a vehicle
+# POST /api/mat-admin/vehicles
+POST {{baseUrl}}/mat-admin/vehicles
+Authorization: Bearer {{matAdminToken}}
+Content-Type: application/json
+
+{
+  "carId": "CAR_MAT_001",
+  "plateNumber": "KCB 123X"
+}
+
+
+###
+
+### 49. MatAdmin — Get own vehicles
+# GET /api/mat-admin/vehicles
+GET {{baseUrl}}/mat-admin/vehicles
+Authorization: Bearer {{matAdminToken}}
+
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║               ERROR / EDGE CASE TESTS                   ║
+# ╚══════════════════════════════════════════════════════════╝
+
+### 50. No token — expect 401
+GET {{baseUrl}}/stages
+
+
+###
+
+### 51. Wrong role — Passenger hitting Admin endpoint (expect 403)
+GET {{baseUrl}}/admin/dashboard-data
+Authorization: Bearer {{passengerToken}}
+
+
+###
+
+### 52. Malformed JSON body — expect 400
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "bad@example.com", "password":
+
+
+###
+
+### 53. Invalid token format — expect 400
+GET {{baseUrl}}/stages
+Authorization: Token invalid_format_here
+
+
+###
+
+### 54. Expired / tampered token — expect 401
+GET {{baseUrl}}/stages
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.tampered.signature
