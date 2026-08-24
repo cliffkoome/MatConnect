@@ -1,21 +1,23 @@
-const { Feedback, Vehicle } = require('../models');
+const { Feedback, Vehicle } = require("../models");
+const { validationResult } = require("express-validator");
 
 /**
  * Allows a passenger to submit feedback for a specific vehicle.
  */
-const submitFeedback = async (req, res) => {
+const submitFeedback = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const { vehicleId, rating, comment } = req.body;
     const userId = req.user.id;
 
-    if (!vehicleId || !rating) {
-      return res.status(400).json({ message: 'Vehicle and rating are required.' });
-    }
-
     // Check if vehicle exists
     const vehicle = await Vehicle.findByPk(vehicleId);
     if (!vehicle) {
-      return res.status(404).json({ message: 'Vehicle not found.' });
+      return res.status(404).json({ message: "Vehicle not found." });
     }
 
     await Feedback.create({
@@ -25,22 +27,24 @@ const submitFeedback = async (req, res) => {
       comment,
     });
 
-    res.status(201).json({ message: 'Thank you for your feedback!' });
+    res.status(201).json({ message: "Thank you for your feedback!" });
   } catch (error) {
-    console.error('Error submitting feedback:', error);
-    res.status(500).json({ message: 'Error submitting feedback', error: error.message });
+    next(error);
   }
 };
 
 /**
  * Fetches all vehicles so passengers can select one for feedback.
  */
-const getAllVehiclesForFeedback = async (req, res) => {
+const getAllVehiclesForFeedback = async (req, res, next) => {
   try {
-    const vehicles = await Vehicle.findAll({ attributes: ['id', 'plateNumber'], order: [['plateNumber', 'ASC']] });
+    const vehicles = await Vehicle.findAll({
+      attributes: ["id", "plateNumber"],
+      order: [["plateNumber", "ASC"]],
+    });
     res.status(200).json(vehicles);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching vehicles', error: error.message });
+    next(error);
   }
 };
 

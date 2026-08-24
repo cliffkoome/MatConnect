@@ -31,7 +31,8 @@ const Feedback = sequelize.define(
   },
   {
     timestamps: true,
-  }
+    indexes: [{ fields: ["vehicleId"] }, { fields: ["userId"] }],
+  },
 );
 
 module.exports = Feedback;
