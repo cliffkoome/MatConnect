@@ -7,13 +7,13 @@ const {
   unsubscribeFromStage,
 } = require("../controllers/stageController");
 const authMiddleware = require("../middleware/authMiddleware");
-const { subscriptionLimiter } = require("../middleware/rateLimiters");
+const { subscriptionLimiter, apiLimiter } = require("../middleware/rateLimiters");
 
 // This route is for any authenticated user (Passenger or Admin)
-router.get("/", authMiddleware(), getAllStages);
+router.get("/", authMiddleware(), apiLimiter, getAllStages);
 
 // Routes for managing SMS alert subscriptions
-router.get("/:stageId/subscription", authMiddleware(), getSubscriptionStatus);
+router.get("/:stageId/subscription", authMiddleware(), apiLimiter, getSubscriptionStatus);
 router.post(
   "/:stageId/subscribe",
   authMiddleware(),
