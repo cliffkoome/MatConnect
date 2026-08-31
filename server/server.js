@@ -6,8 +6,8 @@ const { syncDB } = require("./models");
 const app = express();
 const cors = require("cors");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
 const passport = require("passport");
+const csrf = require("csurf");
 
 const isPkg = typeof process.pkg !== "undefined";
 const basePath = isPkg ? path.dirname(process.execPath) : __dirname;
@@ -26,16 +26,15 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json());
+
+// CSRF protection middleware
+const csrfProtection = csrf({ cookie: true });
+app.use(csrfProtection);
+
 app.use(passport.initialize());
 
-// Apply rate limiting to authentication routes to prevent brute-force attacks
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: "Too many requests from this IP, please try again after 15 minutes",
-});
+// Import rate limiters
+const { authLimiter } = require("./middleware/rateLimiters");
 
 // This should be after dotenv config and passport.initialize
 require("./config/passport"); // Import the passport configuration

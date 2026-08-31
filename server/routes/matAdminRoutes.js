@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { body } = require("express-validator");
 const authMiddleware = require("../middleware/authMiddleware");
+const { adminLimiter, dashboardLimiter } = require("../middleware/rateLimiters");
 const {
   getDashboardData,
   createVehicle,
@@ -14,9 +15,10 @@ const {
 
 // All routes in this file are for MatAdmins only
 router.use(authMiddleware("MatAdmin"));
+router.use(adminLimiter);
 
-router.get("/dashboard-summary", getDashboardSummary);
-router.get("/dashboard-data", getDashboardData); // For live vehicle status
+router.get("/dashboard-summary", dashboardLimiter, getDashboardSummary);
+router.get("/dashboard-data", dashboardLimiter, getDashboardData); // For live vehicle status
 router.get("/vehicle-stats", getVehicleStats);
 router.get("/fleet-aggregate-data", getFleetAggregateData);
 router.get("/vehicles/:vehicleId/chart-data", getVehicleChartData);
