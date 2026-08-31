@@ -43,7 +43,40 @@ const subscriptionLimiter = rateLimit({
   message: "Too many subscription requests. Please try again later.",
 });
 
+// General limiter for API endpoints with authorization
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  store,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again after 15 minutes",
+});
+
+// Stricter limiter for admin operations
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // Limit admin operations to 50 requests per 15 minutes
+  store,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many admin requests. Please try again later.",
+});
+
+// Stricter limiter for dashboard/data retrieval
+const dashboardLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 30, // Limit to 30 requests per minute
+  store,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many dashboard requests. Please try again later.",
+});
+
 module.exports = {
   authLimiter,
   subscriptionLimiter,
+  apiLimiter,
+  adminLimiter,
+  dashboardLimiter,
 };
