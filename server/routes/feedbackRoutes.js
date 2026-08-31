@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { body } = require("express-validator");
 const authMiddleware = require("../middleware/authMiddleware");
+const { apiLimiter } = require("../middleware/rateLimiters");
 const {
   submitFeedback,
   getAllVehiclesForFeedback,
@@ -9,6 +10,7 @@ const {
 
 // All routes in this file are for authenticated passengers
 router.use(authMiddleware("Passenger"));
+router.use(apiLimiter);
 
 router.get("/vehicles", getAllVehiclesForFeedback);
 router.post(
