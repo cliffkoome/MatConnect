@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { body, param } = require("express-validator");
 const authMiddleware = require("../middleware/authMiddleware");
+const { adminLimiter, dashboardLimiter } = require("../middleware/rateLimiters");
 const {
   getAllStages,
   createStage,
@@ -21,9 +22,10 @@ const {
 
 // All routes in this file are for Admins only
 router.use(authMiddleware("Admin"));
+router.use(adminLimiter);
 
 // Dashboard data
-router.get("/dashboard-data", getDashboardData);
+router.get("/dashboard-data", dashboardLimiter, getDashboardData);
 
 // User Management
 router.get("/users", getAllUsers);
