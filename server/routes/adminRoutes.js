@@ -21,8 +21,8 @@ const {
 } = require("../controllers/adminController");
 
 // All routes in this file are for Admins only
-router.use(authMiddleware("Admin"));
 router.use(adminLimiter);
+router.use(authMiddleware("Admin"));
 
 // Dashboard data
 router.get("/dashboard-data", dashboardLimiter, getDashboardData);
