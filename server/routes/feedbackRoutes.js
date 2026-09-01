@@ -9,8 +9,8 @@ const {
 } = require("../controllers/feedbackController");
 
 // All routes in this file are for authenticated passengers
-router.use(authMiddleware("Passenger"));
 router.use(apiLimiter);
+router.use(authMiddleware("Passenger"));
 
 router.get("/vehicles", getAllVehiclesForFeedback);
 router.post(
