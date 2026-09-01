@@ -14,8 +14,8 @@ const {
 } = require("../controllers/matAdminController");
 
 // All routes in this file are for MatAdmins only
-router.use(authMiddleware("MatAdmin"));
 router.use(adminLimiter);
+router.use(authMiddleware("MatAdmin"));
 
 router.get("/dashboard-summary", dashboardLimiter, getDashboardSummary);
 router.get("/dashboard-data", dashboardLimiter, getDashboardData); // For live vehicle status
