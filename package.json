@@ -23,7 +23,7 @@
     "axios": ">=1.18.0",
     "bcrypt": "^6.0.0",
     "body-parser": ">=2.3.0",
-    "brace-expansion": ">=1.1.16",
+    "brace-expansion": ">=5.0.9",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
@@ -51,7 +51,7 @@
   "devDependencies": {
     "axios": ">=1.18.0",
     "body-parser": ">=2.3.0",
-    "brace-expansion": ">=1.1.16",
+    "brace-expansion": ">=5.0.9",
     "fast-xml-parser": ">=5.7.0",
     "form-data": ">=4.0.6",
     "joi": ">=18.2.1",
