@@ -1,0 +1,51 @@
+name: Deploy migrations
+
+# The ONLY path by which schema changes reach production (docs/MIGRATIONS.md, rule R3).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "prisma/migrations/**"
+      - "prisma/schema.prisma"
+  workflow_dispatch:
+
+# Never run two production migrations at once, and never cancel one half-way.
+concurrency:
+  group: deploy-migrations-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: prisma migrate deploy → Neon production
+    runs-on: ubuntu-latest
+    environment: production # add required reviewers in Settings → Environments to gate this
+    env:
+      # Neon *direct* (unpooled) connection string of the production branch.
+      DIRECT_URL: ${{ secrets.DATABASE_URL_DIRECT_PRODUCTION }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Check configuration
+        run: |
+          if [ -z "$DIRECT_URL" ]; then
+            echo "::error::Set the DATABASE_URL_DIRECT_PRODUCTION secret (Neon direct connection string)."
+            exit 1
+          fi
+
+      - name: Pending migrations
+        run: npx prisma migrate status || true
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Production matches schema.prisma
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code

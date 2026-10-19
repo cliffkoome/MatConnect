@@ -1,0 +1,191 @@
+// MatConnect database schema (PostgreSQL on Neon).
+//
+// Conventions (see docs/MIGRATIONS.md):
+//  - Models are PascalCase/singular in TypeScript, tables are snake_case/plural in Postgres (@@map).
+//  - Columns are snake_case in Postgres (@map) and camelCase in TypeScript.
+//  - Every table has created_at; mutable tables also have updated_at.
+//  - Timestamps are `timestamptz` (@db.Timestamptz(3)); calendar days are `date` (@db.Date).
+//  - Foreign keys always declare onDelete explicitly.
+//  - Never edit a migration that has been merged to main; add a new one instead.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  Passenger
+  Admin
+  MatAdmin
+
+  @@map("user_role")
+}
+
+model User {
+  id                Int      @id @default(autoincrement())
+  name              String
+  /// Always stored lower-cased (normalised at the validation layer).
+  email             String   @unique
+  /// bcrypt hash. Null for accounts created through Google sign-in.
+  password          String?
+  role              Role     @default(Passenger)
+  googleId          String?  @unique @map("google_id")
+  /// E.164 format, e.g. +254712345678.
+  phoneNumber       String?  @map("phone_number")
+  profilePictureUrl String?  @map("profile_picture_url")
+  twoFactorSecret   String?  @map("two_factor_secret")
+  twoFactorEnabled  Boolean  @default(false) @map("two_factor_enabled")
+  disabled          Boolean  @default(false)
+  /// Tokens issued before this instant are rejected (logout-everywhere / block / password reset).
+  tokensValidFrom   DateTime @default(now()) @map("tokens_valid_from") @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  ownedVehicles Vehicle[]
+  feedback      Feedback[]
+  subscriptions StageSubscription[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model Stage {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  vehicles    StageVehicle[]
+  subscribers StageSubscription[]
+
+  @@map("stages")
+}
+
+model Vehicle {
+  id            Int       @id @default(autoincrement())
+  /// Identifier reported by the GPS device (key under `locations/` in Firebase).
+  carId         String    @unique @map("car_id")
+  plateNumber   String    @unique @map("plate_number")
+  ownerId       Int?      @map("owner_id")
+  lastLatitude  Float?    @map("last_latitude")
+  lastLongitude Float?    @map("last_longitude")
+  /// True while the vehicle is inside an assigned stage's arrival radius (used for trip counting).
+  isAtStage     Boolean   @default(false) @map("is_at_stage")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// Soft delete marker. Always filter with `deletedAt: null` (see src/server/modules/vehicles).
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  owner          User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  stages         StageVehicle[]
+  dailyDistances DailyDistance[]
+  dailyTrips     DailyTrip[]
+  feedback       Feedback[]
+
+  @@index([ownerId])
+  @@index([deletedAt])
+  @@map("vehicles")
+}
+
+/// Which vehicles serve which stages (the route a vehicle runs).
+model StageVehicle {
+  stageId   Int      @map("stage_id")
+  vehicleId Int      @map("vehicle_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  stage   Stage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@id([stageId, vehicleId])
+  @@index([vehicleId])
+  @@map("stage_vehicles")
+}
+
+/// One-shot SMS alert subscriptions: removed automatically after the alert is delivered.
+model StageSubscription {
+  userId    Int      @map("user_id")
+  stageId   Int      @map("stage_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stageId])
+  @@index([stageId])
+  @@map("stage_subscriptions")
+}
+
+model DailyDistance {
+  id              Int      @id @default(autoincrement())
+  vehicleId       Int      @map("vehicle_id")
+  date            DateTime @db.Date
+  /// Metres travelled on `date` (UTC).
+  distanceCovered Float    @default(0) @map("distance_covered")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, date])
+  @@map("daily_distances")
+}
+
+model DailyTrip {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int      @map("vehicle_id")
+  date      DateTime @db.Date
+  tripCount Int      @default(0) @map("trip_count")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, date])
+  @@map("daily_trips")
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int      @map("vehicle_id")
+  userId    Int      @map("user_id")
+  /// 1–5, enforced by the `feedback_rating_range` CHECK constraint in the init migration.
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, createdAt])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("feedback")
+}
+
+/// Lease-style mutex for background jobs (works through Neon's PgBouncer pooler, unlike session
+/// advisory locks), so overlapping cron invocations or several app instances never run a job twice.
+model JobLock {
+  name        String   @id
+  lockedUntil DateTime @map("locked_until") @db.Timestamptz(3)
+  lockedBy    String?  @map("locked_by")
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("job_locks")
+}
+
+/// Revoked JWT IDs (logout and refresh-token rotation). Rows past `expiresAt` are purged by the ETA cycle.
+model RevokedToken {
+  jti       String   @id
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("revoked_tokens")
+}

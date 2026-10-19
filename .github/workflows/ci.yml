@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate Prisma schema
+        run: npm run db:validate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build (no database needed)
+        run: npm run build
+
+  migrations:
+    name: Migrations (rules, drift, apply, integration tests)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: matconnect
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/matconnect
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/matconnect
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/matconnect_shadow
+      JWT_SECRET: ci-access-secret-0123456789abcdefghijklmnop
+      JWT_REFRESH_SECRET: ci-refresh-secret-0123456789abcdefghijklmnop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the rule checker diffs against the base branch
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Create shadow database
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -c 'CREATE DATABASE matconnect_shadow'
+
+      - name: Migration rules (immutability, ordering, destructive SQL)
+        env:
+          # PRs compare with their base branch; pushes to main compare with the previous commit.
+          MIGRATIONS_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: npm run db:migrate:check
+
+      - name: No drift between schema.prisma and the migrations
+        run: |
+          if ! npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --exit-code --script; then
+            echo "::error::schema.prisma and prisma/migrations disagree. Run 'npm run db:migrate:create' and commit the migration."
+            exit 1
+          fi
+
+      - name: Apply the full history to an empty database
+        run: npx prisma migrate deploy
+
+      - name: Migrated database matches schema.prisma
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+      - name: Re-running deploy is a no-op
+        run: npx prisma migrate deploy
+
+      - name: Integration tests (real Postgres)
+        run: npm run test:integration
+
+      - name: Seed script works
+        run: npm run db:seed

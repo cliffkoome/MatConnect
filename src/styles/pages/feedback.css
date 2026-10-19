@@ -1,0 +1,303 @@
+/* Auto-scoped legacy styles: every selector is prefixed with .page-feedback so pages don't leak into each other. */
+/* Scoped from legacy public/styles/feedback-page.css */
+/* ------------------- */
+/* Variables & Globals */
+/* ------------------- */
+.page-feedback {
+  --primary: #607afb;
+  --bg: #f5f6f8;
+  --card-bg: #ffffff;
+  --border: #e5e7eb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+}
+
+.page-feedback, .page-feedback * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.page-feedback {
+  font-family: "Public Sans", sans-serif;
+  background-color: var(--bg);
+  color: var(--text-main);
+}
+
+.page-feedback .page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-feedback .container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header & Footer */
+.page-feedback .site-header {
+  background-color: rgba(245, 246, 248, 0.8);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 8vh;
+}
+
+.page-feedback .header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.page-feedback .logo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.page-feedback .main-nav {
+  display: none; /* Hidden on mobile */
+}
+
+.page-feedback .main-nav ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+}
+
+.page-feedback .main-nav a {
+  text-decoration: none;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.page-feedback .main-nav a:hover,
+.page-feedback .main-nav a.active {
+  color: var(--primary);
+}
+
+.page-feedback .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-feedback .mobile-menu-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.page-feedback .user-profile {
+  display: flex;
+  align-items: center;
+}
+
+.page-feedback .profile-icon {
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  cursor: pointer;
+}
+
+.page-feedback .logout-btn-desktop {
+  display: none; /* Hidden on mobile, shown on desktop */
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  background-color: var(--border);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.page-feedback .site-footer {
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 2rem 1.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Main Content & Feedback Card */
+.page-feedback .main-content {
+  flex-grow: 1;
+  padding: 2rem 1.5rem;
+}
+
+.page-feedback .feedback-card {
+  max-width: 672px; /* max-w-2xl */
+  margin: 0 auto;
+  background-color: var(--card-bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.page-feedback .card-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-feedback .card-header h2 {
+  font-size: 1.875rem;
+  font-weight: 900;
+}
+
+.page-feedback .card-header p {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+}
+
+/* Form Styling */
+.page-feedback .feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-feedback .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-feedback .form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.page-feedback .form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+}
+
+.page-feedback .form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.page-feedback .form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(96, 122, 251, 0.3);
+}
+.page-feedback .form-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.page-feedback .btn {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: var(--primary);
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.page-feedback .btn:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+/* Star Rating */
+.page-feedback .rating-stars {
+  display: flex;
+  justify-content: center;
+  /* Stars are in reverse order in HTML, so we reverse them back for display */
+  flex-direction: row-reverse; 
+  border: none;
+  padding: 0;
+}
+.page-feedback .rating-stars input {
+  display: none; /* Hide the radio buttons */
+}
+.page-feedback .rating-stars label {
+  font-family: 'Material Symbols Outlined';
+  font-size: 2.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+/* Color stars on hover */
+.page-feedback .rating-stars:hover label {
+  color: var(--primary);
+}
+/* Keep stars after the hovered one gray */
+.page-feedback .rating-stars label:hover ~ label {
+  color: var(--text-muted);
+}
+
+/* Color stars permanently when selected via JavaScript */
+.page-feedback .rating-stars label.is-selected {
+  color: var(--primary);
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .page-feedback .main-nav {
+    display: flex;
+  }
+  .page-feedback .mobile-menu-btn {
+    display: none;
+  }
+  .page-feedback .logout-btn-desktop {
+    display: block;
+  }
+}
+
+/* Mobile Nav Menu (when active) */
+@media (max-width: 767px) {
+  .page-feedback .main-nav.is-active {
+    display: block;
+    position: absolute;
+    top: 8vh;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
+    z-index: 10;
+  }
+  .page-feedback .main-nav.is-active ul {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+}
