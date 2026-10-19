@@ -10,7 +10,7 @@
 
 
 ### ─── Variables ────────────────────────────────────────────
-@baseUrl        = http://localhost:5000/api
+@baseUrl        = http://localhost:3000/api
 @adminToken     = PASTE_ADMIN_ACCESS_TOKEN_HERE
 @matAdminToken  = PASTE_MAT_ADMIN_ACCESS_TOKEN_HERE
 @passengerToken = PASTE_PASSENGER_ACCESS_TOKEN_HERE
@@ -49,6 +49,13 @@ Content-Type: application/json
   "email": "test@example.com",
   "password": "password123"
 }
+
+
+###
+
+### 2b. Get current profile (any role) — preferred over the role-specific routes below
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{passengerToken}}
 
 
 ###
@@ -547,3 +554,17 @@ Authorization: Token invalid_format_here
 ### 54. Expired / tampered token — expect 401
 GET {{baseUrl}}/stages
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.tampered.signature
+
+
+###
+
+### 55. Health check (database reachability) — no auth
+GET {{baseUrl}}/health
+
+
+###
+
+### 56. Run one ETA cycle (what Vercel Cron / a scheduler calls) — needs CRON_SECRET
+@cronSecret = PASTE_CRON_SECRET_HERE
+GET {{baseUrl}}/cron/eta-cycle
+Authorization: Bearer {{cronSecret}}
