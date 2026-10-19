@@ -1,0 +1,8 @@
+/** Google Material Symbols glyph (font loaded in the root layout). */
+export function Icon({ name, className }: { name: string; className?: string }) {
+  return (
+    <span className={`material-symbols-outlined${className ? ` ${className}` : ""}`} aria-hidden="true">
+      {name}
+    </span>
+  );
+}

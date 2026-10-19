@@ -1,0 +1,264 @@
+/* Auto-scoped legacy styles: every selector is prefixed with .page-stage-info so pages don't leak into each other. */
+/* Scoped from legacy public/styles/stage-info.css */
+/* ------------------- */
+/* Variables & Globals */
+/* ------------------- */
+.page-stage-info {
+  --primary: #137fec;
+  --background-light: #f6f7f8;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --white: #ffffff;
+  --green-100: #dcfce7;
+  --green-500: #22c55e;
+  --green-800: #166534;
+  --blue-100: #dbeafe;
+  --blue-500: #3b82f6;
+  --blue-800: #1e40af;
+  --active: #607AFB;
+  --text-muted: #6b7280;
+}
+
+.page-stage-info, .page-stage-info * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.page-stage-info {
+  font-family: "Public Sans", sans-serif;
+  background-color: var(--background-light);
+  color: var(--gray-800);
+}
+
+.page-stage-info .material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.page-stage-info .page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.page-stage-info .container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header & Navigation */
+.page-stage-info .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: rgba(246, 247, 248, 0.8);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid rgba(19, 127, 236, 0.2);
+}
+
+.page-stage-info .navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 8vh;
+}
+
+.page-stage-info .main-nav .active {
+  color: var(--active);
+}
+
+.page-stage-info .logo, .page-stage-info .header-actions, .page-stage-info .vehicle-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-stage-info .logo .material-symbols-outlined {
+  color: var(--primary);
+  font-size: 2rem;
+}
+.page-stage-info .logo h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.page-stage-info .main-nav {
+  display: none; /* Hidden on mobile */
+  gap: 1.5rem;
+}
+.page-stage-info .main-nav a {
+  text-decoration: none;
+  font-weight: 500;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.3s;
+}
+.page-stage-info .main-nav a:hover {
+  color: var(--active);
+}
+
+.page-stage-info .icon-button {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.page-stage-info .icon-button:hover { background-color: rgba(19, 127, 236, 0.2); }
+
+.page-stage-info .avatar {
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* Main Content */
+.page-stage-info main {
+  flex-grow: 1;
+  padding: 2rem 0;
+}
+.page-stage-info .page-header {
+  margin-bottom: 2rem;
+  max-width: 896px;
+  margin: 0 auto 2rem;
+}
+.page-stage-info .page-header h2 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.page-stage-info .page-header p {
+  color: var(--gray-500);
+  margin-top: 0.5rem;
+}
+
+.page-stage-info .card {
+  max-width: 896px;
+  margin: 0 auto;
+  background-color: var(--background-light);
+  border: 1px solid rgba(19, 127, 236, 0.2);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.page-stage-info .arrival-card .card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(19, 127, 236, 0.2);
+}
+
+.page-stage-info .card-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.page-stage-info .arrival-list { list-style: none; }
+.page-stage-info .arrival-list li:not(:last-child) {
+  border-bottom: 1px solid rgba(19, 127, 236, 0.2);
+}
+
+.page-stage-info .arrival-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  transition: background-color 0.2s;
+}
+.page-stage-info .arrival-item:hover { background-color: rgba(19, 127, 236, 0.1); }
+
+.page-stage-info .vehicle-icon-wrapper {
+  background-color: rgba(19, 127, 236, 0.2);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--primary);
+}
+
+.page-stage-info .plate-number { font-weight: 600; }
+.page-stage-info .eta {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* Status Badges */
+.page-stage-info .status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.page-stage-info .status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+}
+.page-stage-info .status-at-stage { background-color: var(--green-100); color: var(--green-800); }
+.page-stage-info .status-at-stage .status-dot { background-color: var(--green-500); }
+
+.page-stage-info .status-arrived { background-color: var(--green-100); color: var(--green-800); }
+.page-stage-info .status-arrived .status-dot { background-color: var(--green-500); }
+
+.page-stage-info .status-approaching { background-color: var(--blue-100); color: var(--blue-800); }
+.page-stage-info .status-approaching .status-dot { background-color: var(--blue-500); }
+
+/* Feedback Card */
+.page-stage-info .feedback-card {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.page-stage-info .feedback-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+.page-stage-info .feedback-card p {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin: 0.25rem 0 1rem;
+}
+
+.page-stage-info .btn {
+  background-color: var(--primary);
+  color: var(--white);
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.page-stage-info .btn:hover { background-color: #106ac4; }
+
+/* Footer */
+.page-stage-info .site-footer {
+  margin-top: 2rem;
+  border-top: 1px solid rgba(19, 127, 236, 0.2);
+}
+.page-stage-info .site-footer .container {
+  padding: 1rem 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .page-stage-info .main-nav { display: flex; }
+}
+
+.page-stage-info .avatar:hover {
+  cursor: pointer;
+}

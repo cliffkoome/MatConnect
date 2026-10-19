@@ -1,0 +1,40 @@
+/*
+ * Global base. Page styles live in src/styles/pages/*.css and are scoped under a
+ * `.page-<name>` wrapper (the legacy body/:root rules were rewritten to target that wrapper).
+ */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Public Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The page roots only (not inner classes like .page-header / .page-wrapper). */
+body > [class^="page-"] {
+  min-height: 100vh;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  vertical-align: middle;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+button {
+  font-family: inherit;
+}
