@@ -1,0 +1,536 @@
+/* Auto-scoped legacy styles: every selector is prefixed with .page-admin-stages so pages don't leak into each other. */
+/* Scoped from legacy public/styles/manage-stages.css */
+/* ------------------- */
+/* Variables & Globals */
+/* ------------------- */
+.page-admin-stages {
+  --primary: #607afb;
+  --primary-light: #eef2ff;
+  --bg: #f6f7f8;
+  --card-bg: #ffffff;
+  --border-light: #e5e7eb;
+  --text-light: #111827;
+  --text-muted-light: #6b7280;
+  --red: #ef4444;
+  --red-light: #fee2e2;
+  --red-dark: #991b1b;
+}
+
+.page-admin-stages, .page-admin-stages * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.page-admin-stages {
+  font-family: "Public Sans", sans-serif;
+  background-color: var(--bg);
+  color: var(--text-light);
+}
+
+.page-admin-stages .hidden {
+  display: none !important;
+}
+
+.page-admin-stages .page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-admin-stages .dashboard-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-grow: 1;
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+
+/* ------------------- */
+/* Header & Navigation */
+/* ------------------- */
+.page-admin-stages .site-header {
+  border-bottom: 1px solid var(--border-light);
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  height: 8vh;
+  min-height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.page-admin-stages .header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.page-admin-stages .logo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text-light);
+}
+
+.page-admin-stages .main-nav {
+  display: none;
+}
+
+.page-admin-stages .main-nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.page-admin-stages .main-nav a {
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted-light);
+  transition: color 0.2s;
+}
+
+.page-admin-stages .main-nav a:hover,
+.page-admin-stages .main-nav a.active {
+  color: var(--primary);
+}
+
+.page-admin-stages .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-admin-stages .user-menu {
+  position: relative;
+  display: none; /* Hidden on mobile */
+}
+
+.page-admin-stages .user-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.page-admin-stages .user-menu-btn:hover {
+  background-color: var(--bg);
+}
+
+.page-admin-stages .avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.page-admin-stages .user-name {
+  font-weight: 600;
+}
+
+.page-admin-stages .dropdown-icon {
+  color: var(--text-muted-light);
+}
+
+.page-admin-stages .user-menu-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 160px;
+  z-index: 30;
+}
+
+.page-admin-stages .user-menu.is-active .user-menu-dropdown {
+  display: block;
+}
+
+.page-admin-stages .user-menu-dropdown a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.page-admin-stages .user-menu-dropdown a:hover {
+  background-color: var(--bg);
+}
+
+.page-admin-stages .mobile-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+/* ------------------- */
+/* Panels              */
+/* ------------------- */
+.page-admin-stages .panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  min-width: 0;
+}
+
+.page-admin-stages .panel-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.page-admin-stages .panel-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.page-admin-stages .panel-header .sub-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted-light);
+  margin-top: 0.25rem;
+}
+
+.page-admin-stages .sub-header .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.page-admin-stages .panel-body {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.page-admin-stages .panel-body.scrollable {
+  overflow-y: auto;
+}
+
+.page-admin-stages .panel-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.page-admin-stages .panel-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-light);
+  background-color: var(--bg);
+}
+
+/* ------------------- */
+/* Lists               */
+/* ------------------- */
+.page-admin-stages .stage-list,
+.page-admin-stages .vehicle-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.page-admin-stages .stage-list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 2px solid transparent;
+}
+
+.page-admin-stages .stage-list-item:hover {
+  background-color: var(--primary-light);
+}
+
+.page-admin-stages .stage-list-item.active {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.page-admin-stages .stage-list-item p {
+  flex: 1;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-admin-stages .item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-admin-stages .chevron {
+  color: var(--text-muted-light);
+}
+
+.page-admin-stages .vehicle-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 0.5rem;
+}
+
+.page-admin-stages .vehicle-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-admin-stages .vehicle-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-admin-stages .vehicle-info .material-symbols-outlined {
+  color: var(--primary);
+}
+
+.page-admin-stages .vehicle-info p {
+  font-weight: 500;
+}
+
+.page-admin-stages .vehicle-list-item .delete-btn:hover {
+  color: var(--red-dark);
+  background-color: var(--red-light);
+}
+
+.page-admin-stages .vehicle-list-item .remove-btn:hover {
+  color: var(--red-dark);
+}
+
+/* ------------------- */
+/* Buttons & Forms     */
+/* ------------------- */
+.page-admin-stages .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-admin-stages .btn:hover {
+  opacity: 0.9;
+}
+
+.page-admin-stages .btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.page-admin-stages .btn-primary:hover {
+  background-color: var(--primary);
+}
+
+.page-admin-stages .btn-secondary {
+  background-color: var(--border-light);
+  color: var(--text-light);
+}
+
+.page-admin-stages .btn-secondary:hover {
+  background-color: #d1d5db; /* gray-300 */
+}
+
+.page-admin-stages .assign-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.page-admin-stages .form-select {
+  flex-grow: 1;
+  padding: 0.75rem;
+  background-color: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.page-admin-stages .icon-button {
+  background: none;
+  border: none;
+  color: var(--text-muted-light);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.page-admin-stages .icon-button:hover {
+  color: var(--text-light);
+  background-color: var(--border-light);
+}
+
+/* ------------------- */
+/* Modal               */
+/* ------------------- */
+.page-admin-stages .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.page-admin-stages .modal-content {
+  background-color: var(--card-bg);
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 500px;
+  margin: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.page-admin-stages .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.page-admin-stages .modal-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.page-admin-stages .modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.page-admin-stages .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-admin-stages .form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted-light);
+  margin-bottom: 0.5rem;
+}
+
+.page-admin-stages .form-group input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background-color: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.page-admin-stages .form-group input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-light);
+  border-color: transparent;
+}
+
+.page-admin-stages .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.page-admin-stages .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background-color: var(--bg);
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+}
+
+/* ------------------- */
+/* Responsive          */
+/* ------------------- */
+@media (min-width: 768px) {
+  .page-admin-stages .main-nav { display: block; }
+  .page-admin-stages .user-menu { display: block; }
+  .page-admin-stages .mobile-menu-btn { display: none; }
+  .page-admin-stages .dashboard-container { padding: 2rem; }
+}
+
+@media (min-width: 1024px) {
+  .page-admin-stages .dashboard-container {
+    flex-direction: row;
+  }
+  .page-admin-stages #stages-panel {
+    flex: 1;
+    max-width: 400px;
+  }
+  .page-admin-stages #details-panel {
+    flex: 2;
+  }
+}
+
+/* Mobile Nav Menu (when active) */
+@media (max-width: 767px) {
+  .page-admin-stages .main-nav.is-active {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--border-light);
+    padding: 1rem 0;
+    z-index: 10;
+  }
+  .page-admin-stages .main-nav.is-active ul {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .page-admin-stages .main-nav.is-active .logout-link {
+    color: var(--red-dark);
+    font-weight: 500;
+  }
+}
