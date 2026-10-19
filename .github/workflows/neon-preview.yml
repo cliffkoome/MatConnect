@@ -1,0 +1,69 @@
+name: Neon preview branch
+
+# For PRs that change the database: copy production into a Neon branch (copy-on-write, seconds) and
+# apply the PR's migrations to it, so migrations are tested against real data before merge.
+# Does nothing until the NEON_PROJECT_ID variable and NEON_API_KEY secret are configured.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+    paths:
+      - "prisma/**"
+
+concurrency:
+  group: neon-preview-${{ github.event.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-preview:
+    if: github.event.action != 'closed' && vars.NEON_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Start from a fresh copy of production on every push.
+      - name: Remove previous preview branch
+        continue-on-error: true
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: preview/pr-${{ github.event.number }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+      - name: Create preview branch from production
+        id: branch
+        uses: neondatabase/create-branch-action@v5
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch_name: preview/pr-${{ github.event.number }}
+          username: ${{ vars.NEON_DB_USER || 'neondb_owner' }}
+          database: ${{ vars.NEON_DB_NAME || 'neondb' }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+      - name: Apply this PR's migrations to the copy
+        env:
+          DIRECT_URL: ${{ steps.branch.outputs.db_url }}
+        run: npx prisma migrate deploy
+
+      - name: Result matches schema.prisma
+        env:
+          DIRECT_URL: ${{ steps.branch.outputs.db_url }}
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+  cleanup:
+    if: github.event.action == 'closed' && vars.NEON_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: preview/pr-${{ github.event.number }}
+          api_key: ${{ secrets.NEON_API_KEY }}

@@ -1,0 +1,166 @@
+/* Auto-scoped legacy styles: every selector is prefixed with .page-signup so pages don't leak into each other. */
+/* Scoped from legacy public/styles/signup.css */
+.page-signup {
+  --primary: #137fec;
+  --background-light: #f6f7f8;
+  --background-dark: #101922;
+}
+
+.page-signup {
+  background-color: var(--background-light);
+  font-family: 'Public Sans', sans-serif;
+}
+
+.page-signup .dark body {
+  background-color: var(--background-dark);
+}
+
+.page-signup .container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.page-signup .form-wrapper {
+  width: 100%;
+  max-width: 28rem;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  margin: 1rem;
+}
+
+.page-signup .dark .form-wrapper {
+  background-color: rgba(16, 25, 34, 0.5);
+}
+
+.page-signup .form-wrapper>*+* {
+  margin-top: 2rem;
+}
+
+.page-signup .text-center {
+  text-align: center;
+}
+
+.page-signup .title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.page-signup .dark .title {
+  color: #ffffff;
+}
+
+.page-signup .subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.page-signup .dark .subtitle {
+  color: #9ca3af;
+}
+
+.page-signup .form {
+  margin-top: 2rem;
+}
+
+.page-signup .form>*+* {
+  margin-top: 1.5rem;
+}
+
+.page-signup .input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-signup .input-group>*+* {
+  margin-top: 1rem;
+}
+
+.page-signup .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.page-signup .input {
+  position: relative;
+  display: block;
+  width: 95%;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  background-color: var(--background-light);
+  border: 1px solid #d1d5db;
+  color: #111827;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.page-signup .input::placeholder {
+  color: #6b7280;
+}
+
+.page-signup .input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.page-signup .dark .input {
+  background-color: rgba(16, 25, 34, 0.7);
+  border-color: #374151;
+  color: #ffffff;
+}
+
+.page-signup .dark .input::placeholder {
+  color: #9ca3af;
+}
+
+.page-signup .button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  background-color: var(--primary);
+}
+
+.page-signup .button:hover {
+  background-color: rgba(19, 127, 236, 0.9);
+}
+
+.page-signup .button:focus {
+  outline: none;
+}
+
+.page-signup .link {
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.page-signup .link a {
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.page-signup .link a:hover {
+  color: rgba(19, 127, 236, 0.9);
+}
