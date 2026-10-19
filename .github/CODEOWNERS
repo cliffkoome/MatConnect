@@ -1,0 +1,4 @@
+# Every schema change needs a maintainer's review (docs/MIGRATIONS.md).
+/prisma/ @cliffkoome
+/docs/MIGRATIONS.md @cliffkoome
+/.github/workflows/ @cliffkoome

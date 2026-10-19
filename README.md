@@ -1,200 +1,118 @@
-# MatConnect: IoT-Enabled Real-time Matatu Arrival Display
+# MatConnect — real-time matatu arrivals
 
-**MatConnect** is a full-stack web application designed to revolutionize the public transport experience in Kenya by providing real-time arrival information for matatus (public minibuses). By leveraging IoT GPS devices, this platform offers passengers accurate ETAs, reducing uncertainty and wait times at various stages. The system also includes robust administrative dashboards for system, matatu, and vehicle management.
+MatConnect shows passengers live ETAs for matatus approaching their stage, sends one-shot SMS alerts
+when a matatu arrives, and gives system admins and matatu owners dashboards for stages, vehicles,
+users, trips, distance and feedback. GPS devices in the vehicles push fixes to Firebase; a background
+cycle turns them into ETAs.
 
----
+**Stack:** Next.js 16 (App Router) · TypeScript · Prisma 7 · PostgreSQL on Neon · Vitest
 
-## Table of Contents
+## Features
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-  - [Passenger Portal](#passenger-portal)
-  - [Admin Dashboard](#admin-dashboard)
-  - [Matatu Admin Dashboard](#matatu-admin-dashboard)
-- [System Architecture](#system-architecture)
-- [Core Business Logic](#core-business-logic)
-  - [Real-time ETA Calculation](#real-time-eta-calculation)
-  - [SMS Arrival Alerts](#sms-arrival-alerts)
-  - [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
-- [Technology Stack](#technology-stack)
-- [Project Setup](#project-setup)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Configuration](#environment-configuration)
-  - [Running the Application](#running-the-application)
-- [API Endpoints](#api-endpoints)
+- **Passengers** — pick a stage, see live ETAs (refreshes every 30 s), subscribe to an SMS alert for the
+  next arrival, rate rides, manage profile and TOTP two-factor auth, sign in with email or Google.
+- **Admins** — live fleet status with street-level locations, stage & route management, vehicle
+  registry, user management (search, filter, block, delete, create admins), feedback feed.
+- **Matatu admins** — today's fleet totals, per-vehicle distance/trips for any day, daily/weekly/monthly
+  charts (PNG export) and a CSV fleet report.
 
----
+## Architecture
 
-## Overview
+```
+src/
+├─ app/                     Next.js routes
+│  ├─ api/**/route.ts       HTTP layer only: validate → call a service → JSON
+│  └─ (pages)               React client pages (/, /login, /stages, /admin, /mat-admin, …)
+├─ server/                  server-only code (never imported by client components — lint-enforced)
+│  ├─ http/                 route() wrapper, error mapping, rate limiting
+│  ├─ auth/                 JWTs (jose), bcrypt, TOTP, guard, cookies, Google OAuth
+│  ├─ modules/<feature>/    business logic per feature (auth, admin, mat-admin, stages, eta, feedback, vehicles)
+│  ├─ domain/               pure logic, no I/O: ETA classification, geo maths, date periods, phone numbers
+│  ├─ integrations/         Firebase RTDB, Google Maps, Africa's Talking SMS, SMTP
+│  ├─ jobs/                 ETA cycle, job lease, in-process scheduler
+│  ├─ db.ts                 Prisma client (Neon serverless driver or node-postgres)
+│  └─ env.ts                validated environment
+├─ lib/client/              browser API client (auto token refresh), session, hooks
+├─ components/              shared UI (headers, live vehicle table)
+└─ styles/pages/            the original page styles, scoped per page
+prisma/                     schema.prisma, migrations/, seed.ts
+tests/                      unit/, api/ (route handlers), integration/ (real Postgres)
+docs/MIGRATIONS.md          migration rules
+```
 
-The daily commute for many involves long, unpredictable waits for matatus. MatConnect addresses this by tracking GPS-enabled vehicles and calculating their real-time Estimated Time of Arrival (ETA) to designated stages.
+Request flow: `route()` applies the rate limit, authenticates the bearer token (checking the user row,
+so blocking a user or resetting a password takes effect immediately), awaits params, runs the handler
+and maps `HttpError` / Zod / Prisma errors to `{ message, errors? }` JSON.
 
-The platform consists of three main components:
-1.  **A Public-Facing Passenger Portal:** Allows users to view live ETAs for vehicles approaching their selected stage and subscribe to SMS alerts.
-2.  **A System Administrator Dashboard:** A comprehensive control panel for managing all aspects of the system, including users, vehicles, and stages.
-3.  **A Matatu Admin Dashboard:** A dedicated view for vehicle owners to monitor their fleet's performance.
+**Auth:** short-lived access token (15 min) in the `Authorization` header, httpOnly refresh cookie
+(7 days, `SameSite=Lax`, path `/api/auth`) with rotation and reuse detection. Every JWT carries a `typ`
+claim so a 2FA temp token can't be used as an access token. Revoked token IDs live in Postgres.
 
-## Key Features
+**ETA cycle:** reads all GPS fixes from Firebase, computes ETAs per stage (Google Directions, only
+inside a 5 km geofence), publishes them to Firebase `etas/<stage>`, counts a trip once per arrival,
+texts subscribers, and accumulates daily distance. A lease row in `job_locks` guarantees only one run
+at a time across instances. It runs:
 
-### Passenger Portal
+| Where you deploy | How the cycle runs | Set |
+| --- | --- | --- |
+| VM / container (`next start`) | in-process every 30 s | nothing (default) |
+| Vercel Pro | Vercel Cron → `/api/cron/eta-cycle?runs=2` every minute (two runs, 30 s apart) | `CRON_SECRET`, add the cron below |
+| Vercel Hobby / other serverless | an external scheduler calling `/api/cron/eta-cycle`, or `npm run eta:worker` on a small VM | `CRON_SECRET` or `ETA_CYCLE_MODE=off` + worker |
 
-- **Real-time ETA Display:** Select a stage and view a live list of approaching matatus with their ETAs.
-- **User Authentication:** Secure sign-up and login using email/password or Google OAuth 2.0.
-- **Two-Factor Authentication (2FA):** Enhanced account security using TOTP (e.g., Google Authenticator).
-- **SMS Arrival Alerts:** Subscribe to a stage to receive an SMS notification when a matatu arrives.
-- **Feedback System:** Rate and comment on vehicle rides to provide valuable feedback.
-- **Profile Management:** Update personal details, including the phone number required for SMS alerts.
+Vercel Pro `vercel.json` (Hobby only allows daily crons and rejects this at deploy time):
 
-### Admin Dashboard
+```json
+{ "crons": [{ "path": "/api/cron/eta-cycle?runs=2", "schedule": "* * * * *" }] }
+```
 
-- **Live System Overview:** A central dashboard displaying key metrics like total vehicles, online vehicles, and configured stages.
-- **Live Vehicle Tracking:** A table showing the real-time status and last known location of all vehicles.
-- **Comprehensive User Management:**
-    - View, search (by name/email), and filter all system users (Admins, MatAdmins, Passengers).
-    - Create new Admin or MatAdmin accounts.
-    - Block, unblock, or permanently delete any user.
-- **Stage & Vehicle Management:**
-    - Create, view, and manage stages with their geographic coordinates.
-    - Create new vehicles and assign them to MatAdmin owners.
-    - Assign and unassign vehicles to/from stages to build routes.
-- **Feedback Monitoring:** View a stream of the latest passenger feedback.
+## Getting started
 
-### Matatu Admin Dashboard
+Prerequisites: Node.js ≥ 22 and a Neon project (or any PostgreSQL 15+).
 
-- **Fleet Overview:** A dedicated dashboard for vehicle owners to view and manage their assigned vehicles.
-- **Performance Metrics:** (Future Scope) Track daily trips, distance covered, and other performance indicators.
+```bash
+git clone https://github.com/cliffkoome/MatConnect && cd MatConnect
+npm install                       # also runs `prisma generate`
+cp .env.example .env              # read by Next.js, the Prisma CLI and scripts
+# fill in DATABASE_URL (pooled), DIRECT_URL (direct) and the two JWT secrets
+npm run db:migrate:deploy         # create the schema
+npm run db:seed                   # optional demo data (password: matconnect123)
+npm run dev                       # http://localhost:3000
+```
 
-## System Architecture
+The first account to register becomes the Admin. Optional integrations (Google sign-in, Maps, Firebase,
+SMS, email) switch on when their variables are set; see `.env.example`.
 
-MatConnect is built on a modern, decoupled architecture:
+## Scripts
 
-- **Frontend:** A client-side application built with **HTML5, CSS3, and Vanilla JavaScript**. It communicates with the backend via a RESTful API.
-- **Backend:** A **Node.js** server using the **Express.js** framework. It handles business logic, authentication, and data processing.
-- **Database:** A **MariaDB** relational database, with **Sequelize** as the ORM for robust and safe data modeling and querying.
-- **Real-time Data Ingestion:** **Firebase Realtime Database** acts as the ingestion point for live GPS coordinates sent from IoT devices installed in the matatus.
-- **External Services:**
-    - **Google Maps API:** Used for `Directions` (to calculate ETAs considering traffic) and `Geocoding` (to convert coordinates into human-readable addresses).
-    - **Google OAuth 2.0:** For secure and convenient user authentication.
-    - **Africa's Talking API:** For dispatching SMS arrival alerts to subscribed passengers.
+| Script | What it does |
+| --- | --- |
+| `npm run dev` / `build` / `start` | Next.js |
+| `npm run lint` / `typecheck` | ESLint, `tsc --noEmit` |
+| `npm test` | unit + route tests (no database needed) |
+| `npm run test:integration` | tests against a real, migrated Postgres (`DATABASE_URL`) |
+| `npm run db:migrate:create -- --name x` | generate a migration from schema changes, without applying it |
+| `npm run db:migrate:dev` | apply pending migrations to your dev database |
+| `npm run db:migrate:deploy` | apply migrations (CI / production) |
+| `npm run db:migrate:status` | show applied / pending migrations |
+| `npm run db:migrate:check` | enforce the migration rules |
+| `npm run db:seed` / `db:studio` | seed demo data / open Prisma Studio |
+| `npm run eta:worker` | run the ETA cycle as a standalone process |
 
-## Core Business Logic
+## Database & migrations
 
-### Real-time ETA Calculation
+Read **[docs/MIGRATIONS.md](docs/MIGRATIONS.md)** before changing `prisma/schema.prisma`. In short:
+generate migrations with `db:migrate:create`, review the SQL, never edit a merged migration, keep
+changes backward compatible, mark destructive SQL explicitly, and let CI deploy to production.
 
-The ETA calculation is handled by a background service (`etaCalculationService.js`) that runs every 30 seconds.
+CI (`.github/workflows/`):
+- **ci.yml** — lint, typecheck, tests, build; then migration rules, drift check, apply history to a
+  fresh Postgres, verify DB == schema, integration tests, seed.
+- **neon-preview.yml** — per-PR Neon branch copied from production with the PR's migrations applied.
+- **deploy-migrations.yml** — `prisma migrate deploy` to production on merge to `main` (only path to prod).
 
-1.  The service fetches all stages and their assigned vehicles from the MariaDB database.
-2.  For each vehicle, it retrieves the latest GPS location from the **Firebase Realtime Database**.
-3.  If a vehicle is online, it uses the **Google Maps Directions API** to calculate the travel duration from the vehicle's current location to the stage's location. The `departure_time: 'now'` parameter is used to get traffic-aware ETAs.
-4.  The distance to the stage is checked. If a vehicle is within a 50-meter radius, its status is marked as **'Arrived'**. Otherwise, it's **'Approaching'**.
-5.  The calculated ETAs and statuses are then pushed to a dedicated `etas` node in Firebase, which the frontend clients listen to for live updates.
+## API
 
-### SMS Arrival Alerts
-
-1.  An authenticated passenger can subscribe to receive an alert for a specific stage. This requires them to have a verified phone number in their profile.
-2.  When the background ETA service marks a vehicle's status as **'Arrived'**, it queries the database for all users subscribed to that stage.
-3.  It iterates through the subscribers and sends an SMS notification via the **Africa's Talking API**.
-4.  To prevent spam, a user is **automatically unsubscribed** from the stage immediately after receiving an alert.
-
-### Role-Based Access Control (RBAC)
-
-The system uses JSON Web Tokens (JWT) for authentication. Upon login, a user's role (`Admin`, `MatAdmin`, or `Passenger`) is encoded into the JWT.
-
-A custom middleware (`authMiddleware.js`) protects backend routes by verifying the JWT and checking if the user's role has the necessary permissions for the requested resource. This ensures a secure separation of functionalities.
-
-## Technology Stack
-
-- **Backend:** Node.js, Express.js, Sequelize, Passport.js (for Google OAuth)
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript
-- **Database:** MariaDB, Firebase Realtime Database
-- **APIs & Services:** Google Maps API, Google OAuth, Africa's Talking API
-- **Authentication:** JWT, bcrypt (for password hashing), Speakeasy (for 2FA)
-
-## Project Setup
-
-### Prerequisites
-
-- Node.js (v18.x or later)
-- MariaDB (or MySQL)
-- An account for Firebase, Google Cloud Platform, and Africa's Talking.
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/cliffkoome/MatConnect
-    cd GRP-A-ISP-cliffkoome
-    ```
-
-2.  **Install server dependencies:**
-    ```bash
-    cd server
-    npm install
-    ```
-
-### Environment Configuration
-
-1.  In the `server/` directory, create a `.env` file by copying the `.env.example` file.
-
-2.  Fill in the required credentials in your `.env` file:
-    ```env
-    # Server
-    PORT=5000
-    SERVER_BASE_URL=http://localhost:5000
-
-    # Database (MariaDB/MySQL)
-    DB_HOST=localhost
-    DB_USER=your_db_user
-    DB_PASSWORD=your_db_password
-    DB_NAME=matconnect_db
-
-    # JWT Secrets
-    JWT_SECRET=your_super_secret_key
-    JWT_REFRESH_SECRET=your_super_secret_refresh_key
-
-    # Google OAuth 2.0
-    GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
-    GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-    # Google Maps API
-    GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-
-    # Africa's Talking API
-    AFRICAS_TALKING_API_KEY=your_africastalking_api_key
-    AFRICAS_TALKING_USERNAME=sandbox # or your live username
-
-    # Email for Password Resets (e.g., using Gmail App Password)
-    EMAIL_HOST=smtp.gmail.com
-    EMAIL_PORT=465
-    EMAIL_SECURE=true
-    EMAIL_USER=your_email@gmail.com
-    EMAIL_PASS=your_gmail_app_password
-    ```
-
-3.  **Firebase Setup:**
-    - Create a Firebase project and set up the **Realtime Database**.
-    - Generate a service account key JSON file.
-    - Place the file in `server/config/` and rename it to `firebase-service-account.json`.
-
-### Running the Application
-
-1.  **Start the server:**
-    From the `server/` directory, run:
-    ```bash
-    npm start
-    ```
-    This will start the server (usually on `http://localhost:5000`) and automatically synchronize the database schema.
-
-2.  **Access the application:**
-    Open your web browser and navigate to `http://localhost:5000`.
-
-## API Endpoints
-
-The API is organized by resource and protected by role-based authentication.
-
-- `/api/auth/`: User registration, login (email/Google), 2FA, profile updates.
-- `/api/admin/`: Admin-only endpoints for managing users, stages, vehicles, and viewing system data.
-- `/api/stages/`: Public endpoints for fetching stages and managing SMS subscriptions.
-- `/api/eta/`: Endpoints for fetching live ETA data for a specific stage.
-- `/api/feedback/`: Endpoints for submitting and retrieving feedback.
+Same endpoints as the Express version (`api-tests.http` has a request for each):
+`/api/auth/*` (register, login, refresh, logout, me, profile, password reset, 2FA, Google),
+`/api/stages`, `/api/eta/:stageId`, `/api/feedback`, `/api/admin/*`, `/api/mat-admin/*`,
+plus `/api/health` and `/api/cron/eta-cycle`. Old `*.html` page URLs redirect to the new routes.
