@@ -1,12 +1,14 @@
 /**
  * Development seed — idempotent, safe to re-run:  npm run db:seed
  *
- * Creates one account per role (password: `matconnect123`), a few Nairobi stages and vehicles.
+ * Creates one app user per role, a few Nairobi stages and vehicles. Passwords live in Neon Auth, so
+ * the users have none here: sign up (or sign in with Google) with one of these emails and you get
+ * that role. Neon Auth emails a verification code, so use addresses you can read, for example:
+ *   SEED_ADMIN_EMAIL=you+admin@gmail.com SEED_MATADMIN_EMAIL=you+owner@gmail.com npm run db:seed
  * Never run against production: it refuses when NODE_ENV=production.
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcryptjs";
 import pg from "pg";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
 
@@ -15,7 +17,7 @@ if (process.env.NODE_ENV === "production") {
   process.exit(1);
 }
 
-const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!connectionString) throw new Error("Set DATABASE_URL (or DIRECT_URL) before seeding.");
 
 // Same UTC session rule as src/server/db.ts (see createUtcPool there).
@@ -23,18 +25,22 @@ const pool = new pg.Pool({ connectionString, onConnect: async (client) => void (
 const db = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
-  const password = await bcrypt.hash("matconnect123", 10);
   const user = (email: string, name: string, role: "Admin" | "MatAdmin" | "Passenger", phoneNumber?: string) =>
     db.user.upsert({
-      where: { email },
+      where: { email: email.trim().toLowerCase() },
       update: {},
-      create: { email, name, role, password, phoneNumber },
+      create: { email: email.trim().toLowerCase(), name, role, phoneNumber },
     });
 
+  const emails = {
+    admin: process.env.SEED_ADMIN_EMAIL || "admin@matconnect.local",
+    owner: process.env.SEED_MATADMIN_EMAIL || "owner@matconnect.local",
+    passenger: process.env.SEED_PASSENGER_EMAIL || "passenger@matconnect.local",
+  };
   const [, owner] = await Promise.all([
-    user("admin@matconnect.local", "System Admin", "Admin"),
-    user("owner@matconnect.local", "Matatu Owner", "MatAdmin"),
-    user("passenger@matconnect.local", "Pat Passenger", "Passenger", "+254700000000"),
+    user(emails.admin, "System Admin", "Admin"),
+    user(emails.owner, "Matatu Owner", "MatAdmin"),
+    user(emails.passenger, "Pat Passenger", "Passenger", "+254700000000"),
   ]);
 
   const stages = await Promise.all(
@@ -61,7 +67,8 @@ async function main() {
     skipDuplicates: true,
   });
 
-  console.log(`Seeded ${stages.length} stages, ${vehicles.length} vehicles and 3 users (password: matconnect123).`);
+  console.log(`Seeded ${stages.length} stages, ${vehicles.length} vehicles and 3 users.`);
+  console.log(`Sign up with ${Object.values(emails).join(", ")} to use them (the role comes with the email).`);
 }
 
 main()

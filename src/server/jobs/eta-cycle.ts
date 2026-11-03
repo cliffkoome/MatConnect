@@ -13,7 +13,6 @@ import {
 } from "@/server/integrations/firebase";
 import { getDirections } from "@/server/integrations/google-maps";
 import { sendSms as defaultSendSms, type SmsResult } from "@/server/integrations/sms";
-import { purgeExpiredRevocations } from "@/server/modules/auth/revocation";
 import { calculateEtasForStage, visibleArrivals, type DirectionsFn } from "@/server/modules/eta/eta.service";
 import { activeVehicle } from "@/server/modules/vehicles/vehicles";
 import { acquireJobLock } from "./job-lock";
@@ -164,8 +163,6 @@ async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
       console.error(`[eta-cycle] distance update failed for vehicle ${vehicle.id}`, error);
     }
   }
-
-  await purgeExpiredRevocations(deps.now()).catch((e) => console.error("[eta-cycle] revocation purge failed", e));
 
   return { skipped: false, ...report, durationMs: Date.now() - startedAt };
 }

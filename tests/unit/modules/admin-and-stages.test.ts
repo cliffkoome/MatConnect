@@ -69,19 +69,6 @@ describe("admin user management", () => {
     expect(createUserSchema.safeParse({ ...base, role: "Passenger" }).success).toBe(false);
   });
 
-  it("blocking a user also invalidates their tokens", async () => {
-    dbMock.user.findUnique.mockResolvedValue({ id: 4 } as never);
-    await admin.setUserDisabled(1, 4, true);
-    const { data } = dbMock.user.update.mock.calls[0]![0];
-    expect(data).toMatchObject({ disabled: true, tokensValidFrom: expect.any(Date) });
-  });
-
-  it("unblocking does not touch tokensValidFrom", async () => {
-    dbMock.user.findUnique.mockResolvedValue({ id: 4 } as never);
-    await admin.setUserDisabled(1, 4, false);
-    expect(dbMock.user.update.mock.calls[0]![0].data).toEqual({ disabled: false });
-  });
-
   it("stops admins from blocking or deleting themselves", async () => {
     await expect(admin.setUserDisabled(1, 1, true)).rejects.toMatchObject({ status: 400 });
     await expect(admin.deleteUser(1, 1)).rejects.toMatchObject({ status: 400 });
@@ -89,10 +76,17 @@ describe("admin user management", () => {
     expect(dbMock.user.deleteMany).not.toHaveBeenCalled();
   });
 
-  it("never returns password hashes for created users", async () => {
-    dbMock.user.create.mockResolvedValue(userRow({ id: 9, role: "MatAdmin", password: "$2b$10$hash" }));
-    const { user } = await admin.createUser({ name: "Mo", email: "mo@example.com", password: "secret123", role: "MatAdmin" });
-    expect(user).not.toHaveProperty("password");
+  it("adds users without a Neon Auth link and never returns internal ids", async () => {
+    dbMock.user.create.mockResolvedValue(userRow({ id: 9, role: "MatAdmin", authUserId: null }));
+    const { user } = await admin.createUser({ name: "Mo", email: "mo@example.com", role: "MatAdmin" });
+    expect(dbMock.user.create).toHaveBeenCalledWith({ data: { name: "Mo", email: "mo@example.com", role: "MatAdmin" } });
+    expect(user).not.toHaveProperty("authUserId");
+  });
+
+  it("blocks a user with just the disabled flag (checked on every API request)", async () => {
+    dbMock.user.findUnique.mockResolvedValue(userRow({ id: 2 }));
+    await admin.setUserDisabled(1, 2, true);
+    expect(dbMock.user.update).toHaveBeenCalledWith({ where: { id: 2 }, data: { disabled: true } });
   });
 });
 

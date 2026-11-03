@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/icon";
-import { api, logout } from "@/lib/client/api";
-import { clearSession, getSession, homePathFor } from "@/lib/client/session";
-import type { Profile, Role } from "@/lib/client/types";
+import { logout } from "@/lib/client/api";
+import { homePathFor, loadMe } from "@/lib/client/session";
+import type { Role } from "@/lib/client/types";
 
 const features = [
   {
@@ -32,11 +32,7 @@ export function HomeClient() {
   const [role, setRole] = useState<Role | null>(null);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) return;
-    api<Profile>("/api/auth/me", { redirectOnAuthFailure: false })
-      .then((me) => setRole(me.role))
-      .catch(() => clearSession());
+    void loadMe().then((me) => setRole(me?.role ?? null));
   }, []);
 
   return (
