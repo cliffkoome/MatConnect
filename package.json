@@ -5,6 +5,15 @@
   "type": "module",
   "description": "Real-time matatu arrival times from live GPS, SMS arrival alerts, and fleet dashboards for operators (Next.js, Neon Postgres, Neon Auth)",
   "license": "ISC",
+  "author": "Clifford Karani (https://github.com/cliffkoome)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cliffkoome/MatConnect.git"
+  },
+  "homepage": "https://github.com/cliffkoome/MatConnect#readme",
+  "bugs": {
+    "url": "https://github.com/cliffkoome/MatConnect/issues"
+  },
   "engines": {
     "node": ">=22"
   },
