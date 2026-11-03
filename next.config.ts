@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Server-only SDKs that should be required at runtime rather than bundled.
-  serverExternalPackages: ["firebase-admin", "pg", "nodemailer"],
+  serverExternalPackages: ["firebase-admin", "pg"],
   images: {
     remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com" }],
   },
