@@ -6,6 +6,7 @@
 [![Deploy migrations](https://github.com/cliffkoome/MatConnect/actions/workflows/deploy-migrations.yml/badge.svg)](https://github.com/cliffkoome/MatConnect/actions/workflows/deploy-migrations.yml)
 ![Node.js ≥ 22](https://img.shields.io/badge/node-%E2%89%A5%2022-339933)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
+[![License: ISC](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
 
 MatConnect turns live GPS from IoT devices in matatus (Kenyan minibuses) into arrival times at each
 stage. Passengers see what's coming and get an SMS when their ride arrives. System admins run the
@@ -300,4 +301,4 @@ neon.ts                    Neon project policy (services, branch expiry)
 
 ---
 
-Licensed under the ISC license (declared in `package.json`).
+[ISC](LICENSE) © 2025-2026 Clifford Karani
