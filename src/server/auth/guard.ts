@@ -1,54 +1,40 @@
 import "server-only";
 import type { Role } from "@/generated/prisma/enums";
-import { db } from "@/server/db";
-import { HttpError, forbidden, unauthorized } from "@/server/http/errors";
-import { tokens } from "./context";
-import { TokenError, issuedBeforeInvalidation, type AccessClaims } from "./tokens";
+import { forbidden, unauthorized } from "@/server/http/errors";
+import { linkAuthUser, type AuthIdentity } from "@/server/modules/auth/auth.service";
+import { neonAuth } from "./neon";
 
-/** Extracts the bearer token, or throws the same 401/400 responses the Express middleware returned. */
-export function bearerToken(headers: Headers): string {
-  const header = headers.get("authorization");
-  if (!header) throw unauthorized("Access denied. No token provided.");
-  const [scheme, token, ...rest] = header.split(" ");
-  if (scheme !== "Bearer" || !token || rest.length) throw new HttpError(400, "Invalid token format");
-  return token;
+/** The signed-in caller as the API sees them: the app's own user row, not the Neon Auth user. */
+export type AuthUser = { id: number; authUserId: string; email: string; role: Role };
+
+/** Reads the Neon Auth session from the request cookies. Null when signed out or the session is invalid. */
+export async function currentIdentity(): Promise<AuthIdentity | null> {
+  const { data } = await neonAuth().getSession();
+  const user = data?.user;
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    image: user.image ?? null,
+    emailVerified: Boolean(user.emailVerified),
+  };
 }
 
 /**
- * Verifies the access token and checks it against the claims-based rules:
- * disabled flag, tokensValidFrom invalidation, required role, and the revocation list (logout).
+ * Authenticates the request from its Neon Auth session cookie and authorises the app role.
+ * Disabled and role checks read the current `users` row on every request, so blocking a user or
+ * changing their role takes effect immediately.
  */
-export async function authenticate(headers: Headers, role?: Role): Promise<AccessClaims> {
-  const token = bearerToken(headers);
+export async function authenticate(role?: Role): Promise<AuthUser> {
+  const identity = await currentIdentity();
+  if (!identity) throw unauthorized("Access denied. Please sign in.");
+  // Roles are granted by email (first user, Admin-provisioned accounts), so the email must be proven.
+  if (!identity.emailVerified) throw forbidden("Please verify your email address first.");
 
-  let claims: AccessClaims;
-  try {
-    claims = await tokens().verifyAccess(token);
-  } catch (error) {
-    if (error instanceof TokenError && error.reason === "expired") throw unauthorized("Token expired");
-    throw unauthorized("Invalid token");
-  }
-
-  if (claims.disabled) throw forbidden("Account disabled");
-  if (role && claims.role !== role) throw forbidden();
-
-  // The Express version only compared the token against its *own* tokensValidFrom claim, which can
-  // never change, so blocking a user or resetting a password didn't affect live access tokens.
-  // Checking the current row makes both take effect immediately.
-  const [user, revoked] = await Promise.all([
-    db.user.findUnique({
-      where: { id: claims.id },
-      select: { disabled: true, tokensValidFrom: true, role: true },
-    }),
-    db.revokedToken.findUnique({ where: { jti: claims.jti }, select: { jti: true } }),
-  ]);
-
-  if (!user || revoked) throw unauthorized("Token has been invalidated");
+  const user = await linkAuthUser(identity);
   if (user.disabled) throw forbidden("Account disabled");
-  if (user.role !== claims.role) throw unauthorized("Token has been invalidated");
-  if (issuedBeforeInvalidation(claims.iat, user.tokensValidFrom.getTime())) {
-    throw unauthorized("Token has been invalidated");
-  }
+  if (role && user.role !== role) throw forbidden();
 
-  return claims;
+  return { id: user.id, authUserId: identity.id, email: user.email, role: user.role };
 }

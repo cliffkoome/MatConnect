@@ -1,29 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import { homePathFor, setSession } from "@/lib/client/session";
-import type { Role } from "@/lib/client/types";
-
-const ROLES: Role[] = ["Passenger", "Admin", "MatAdmin"];
+import { authClient } from "@/lib/auth/client";
+import { goHome } from "@/lib/client/session";
 
 /**
- * Landing page after Google sign-in. The server puts the access token in the URL *fragment*
- * (#accessToken=…&role=…). The old page read the query string instead, so this flow was broken.
+ * Landing page after Google sign-in. Neon Auth has already set the session cookie; this loads the
+ * app profile (creating or linking the MatConnect account on first sign-in) and goes to its home page.
  */
 export default function AuthSuccessPage() {
   useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    const accessToken = params.get("accessToken");
-    const role = params.get("role") as Role | null;
-    // Remove the token from the address bar / history straight away.
-    window.history.replaceState(null, "", window.location.pathname);
-
-    if (accessToken && role && ROLES.includes(role)) {
-      setSession(accessToken, role);
-      window.location.replace(homePathFor(role));
-    } else {
-      window.location.replace("/login?error=auth_failed");
-    }
+    void goHome().then(async (ok) => {
+      if (ok) return;
+      // Signed in to Neon Auth but the API refused the account (e.g. blocked by an Admin).
+      await authClient.signOut().catch(() => undefined);
+      window.location.replace("/login?error=account_disabled");
+    });
   }, []);
 
   return (

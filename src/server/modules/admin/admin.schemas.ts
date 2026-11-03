@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Role } from "@/generated/prisma/enums";
-import { email, id, newPassword, pagination, personName } from "@/server/validation/common";
+import { email, id, pagination, personName } from "@/server/validation/common";
 
 export const createStageSchema = z.object({
   name: z.string({ error: "Stage name is required" }).trim().min(1, "Stage name is required").max(120),
@@ -45,7 +45,6 @@ export const updateUserSchema = z.object({
 export const createUserSchema = z.object({
   name: personName(),
   email: email(),
-  password: newPassword,
   role: z.enum([Role.Admin, Role.MatAdmin], { error: "Invalid role specified" }),
 });
 

@@ -27,21 +27,17 @@ enum Role {
 
 model User {
   id                Int      @id @default(autoincrement())
+  /// Neon Auth (`neon_auth.user.id`). Null until the person first signs in: an Admin can add a user
+  /// by email ahead of time, and the row is linked on that email's first verified sign-in.
+  authUserId        String?  @unique @map("auth_user_id")
   name              String
   /// Always stored lower-cased (normalised at the validation layer).
   email             String   @unique
-  /// bcrypt hash. Null for accounts created through Google sign-in.
-  password          String?
   role              Role     @default(Passenger)
-  googleId          String?  @unique @map("google_id")
   /// E.164 format, e.g. +254712345678.
   phoneNumber       String?  @map("phone_number")
   profilePictureUrl String?  @map("profile_picture_url")
-  twoFactorSecret   String?  @map("two_factor_secret")
-  twoFactorEnabled  Boolean  @default(false) @map("two_factor_enabled")
   disabled          Boolean  @default(false)
-  /// Tokens issued before this instant are rejected (logout-everywhere / block / password reset).
-  tokensValidFrom   DateTime @default(now()) @map("tokens_valid_from") @db.Timestamptz(3)
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -178,14 +174,4 @@ model JobLock {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("job_locks")
-}
-
-/// Revoked JWT IDs (logout and refresh-token rotation). Rows past `expiresAt` are purged by the ETA cycle.
-model RevokedToken {
-  jti       String   @id
-  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-
-  @@index([expiresAt])
-  @@map("revoked_tokens")
 }

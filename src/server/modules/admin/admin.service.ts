@@ -1,7 +1,6 @@
 import "server-only";
 import type { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
-import { hashPassword } from "@/server/auth/password";
 import { db } from "@/server/db";
 import { badRequest, notFound } from "@/server/http/errors";
 import { feedbackSelect } from "@/server/modules/feedback/feedback.service";
@@ -120,7 +119,7 @@ const userRowSelect = {
   name: true,
   email: true,
   role: true,
-  twoFactorEnabled: true,
+  authUserId: true,
   disabled: true,
   createdAt: true,
 } satisfies Prisma.UserSelect;
@@ -149,18 +148,16 @@ export async function listUsers(currentUserId: number, query: z.infer<typeof lis
     db.user.findMany({ where, orderBy: { name: "asc" }, take: query.limit, skip: query.offset, select: userRowSelect }),
     db.user.count({ where }),
   ]);
-  return { users, total };
+  // `activated`: the person has signed in through Neon Auth at least once (an Admin-added user hasn't).
+  return { users: users.map(({ authUserId, ...user }) => ({ ...user, activated: authUserId !== null })), total };
 }
 
 export async function setUserDisabled(actingAdminId: number, userId: number, disabled: boolean) {
   if (actingAdminId === userId) throw badRequest("You can't block your own account.");
   const user = await db.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!user) throw notFound("User not found");
-  await db.user.update({
-    where: { id: userId },
-    // Blocking also invalidates every token the user currently holds.
-    data: disabled ? { disabled, tokensValidFrom: new Date() } : { disabled },
-  });
+  // Takes effect on the user's next request: the API guard reads `disabled` on every call.
+  await db.user.update({ where: { id: userId }, data: { disabled } });
   return { message: `User has been ${disabled ? "blocked" : "unblocked"}.` };
 }
 
@@ -174,9 +171,11 @@ export async function deleteUser(actingAdminId: number, userId: number) {
 export const listMatAdmins = () =>
   db.user.findMany({ where: { role: "MatAdmin" }, orderBy: { name: "asc" }, select: { id: true, name: true } });
 
+/**
+ * Adds a user ahead of their first sign-in. Neon Auth owns passwords, so there's none to set here:
+ * the row is linked, keeping this role, when someone signs in with this (verified) email.
+ */
 export async function createUser(input: z.infer<typeof createUserSchema>) {
-  const user = await db.user.create({
-    data: { ...input, password: await hashPassword(input.password) },
-  });
-  return { message: "User created successfully", user: toPublicUser(user) };
+  const user = await db.user.create({ data: input });
+  return { message: "User added. They get this role when they sign up with this email.", user: toPublicUser(user) };
 }

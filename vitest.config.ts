@@ -18,5 +18,8 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.ts", "tests/api/**/*.test.ts"],
     setupFiles: ["tests/support/setup.ts"],
     restoreMocks: true,
+    // @neon/auth imports `next/headers` without an extension, which Node's ESM loader can't resolve
+    // outside Next.js; letting Vite bundle it resolves the import the way Next does.
+    server: { deps: { inline: ["@neon/auth"] } },
   },
 });

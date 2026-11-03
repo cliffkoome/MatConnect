@@ -1,36 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
-import { getSession } from "./session";
+import { loadMe } from "./session";
 import type { Profile, Role } from "./types";
 
 /**
- * Client-side page guard (the API enforces the real authorisation). Returns true once a session
- * with an allowed role is present; otherwise redirects to /login.
+ * Client-side page guard (the API enforces the real authorisation). Returns true once the signed-in
+ * user's role is allowed; otherwise redirects to /login. Server render and hydration see `false`.
  */
 export function useRoleGuard(allowed: Role | Role[]): boolean {
   const key = (Array.isArray(allowed) ? allowed : [allowed]).join(",");
-  const isAllowed = () => {
-    const session = getSession();
-    return Boolean(session && key.split(",").includes(session.role));
-  };
-  // Server render (and the hydration pass) always see `false`, so markup matches; the client then
-  // re-renders with the real answer from localStorage.
-  const ready = useSyncExternalStore(subscribeToStorage, isAllowed, () => false);
-  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (hydrated && !ready) window.location.replace("/login");
-  }, [hydrated, ready]);
+    let active = true;
+    void loadMe().then((me) => {
+      if (!active) return;
+      if (me && key.split(",").includes(me.role)) setReady(true);
+      else window.location.replace("/login");
+    });
+    return () => {
+      active = false;
+    };
+  }, [key]);
 
   return ready;
-}
-
-const noopSubscribe = () => () => {};
-function subscribeToStorage(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  return () => window.removeEventListener("storage", onChange);
 }
 
 /** The signed-in user's profile (null while loading or on error). */

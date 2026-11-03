@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 import { errorResponse } from "@/server/http/route";
 import { countTripOnce, trackDistance } from "@/server/jobs/eta-cycle";
 import { acquireJobLock } from "@/server/jobs/job-lock";
-import { isRevoked, purgeExpiredRevocations, revokeToken } from "@/server/modules/auth/revocation";
+import { linkAuthUser } from "@/server/modules/auth/auth.service";
 
 /**
  * Runs against a real, migrated database (`npm run db:migrate:deploy` first).
@@ -17,7 +17,7 @@ const TODAY = new Date("2026-10-19T00:00:00Z");
 async function truncateAll() {
   await db.$executeRawUnsafe(`
     TRUNCATE TABLE "feedback", "daily_trips", "daily_distances", "stage_subscriptions", "stage_vehicles",
-                   "vehicles", "stages", "users", "revoked_tokens", "job_locks"
+                   "vehicles", "stages", "users", "job_locks"
     RESTART IDENTITY CASCADE`);
 }
 
@@ -129,16 +129,24 @@ describe("job lease", () => {
   });
 });
 
-describe("token revocation", () => {
-  it("stores revocations until expiry and purges them afterwards", async () => {
-    const future = Math.floor(Date.now() / 1000) + 60;
-    await revokeToken("jti-1", future);
-    await revokeToken("jti-1", future); // idempotent
-    await revokeToken("jti-expired", Math.floor(Date.now() / 1000) - 1); // already expired: not stored
-    expect(await isRevoked("jti-1")).toBe(true);
-    expect(await isRevoked("jti-expired")).toBe(false);
+describe("Neon Auth user linking", () => {
+  const verified = (id: string, email: string) => ({ id, email, name: email, image: null, emailVerified: true });
 
-    expect(await purgeExpiredRevocations(new Date((future + 1) * 1000))).toBe(1);
-    expect(await isRevoked("jti-1")).toBe(false);
+  it("makes the first user the Admin, links Admin-added users by email, and is idempotent", async () => {
+    const first = await linkAuthUser(verified("auth-1", "Ada@Example.com"));
+    expect(first).toMatchObject({ role: "Admin", email: "ada@example.com", authUserId: "auth-1" });
+    expect((await linkAuthUser(verified("auth-1", "ada@example.com"))).id).toBe(first.id);
+
+    const invited = await db.user.create({ data: { name: "Mo", email: "mo@example.com", role: "MatAdmin" } });
+    const linked = await linkAuthUser(verified("auth-2", "mo@example.com"));
+    expect(linked).toMatchObject({ id: invited.id, role: "MatAdmin", authUserId: "auth-2" });
+
+    expect(await linkAuthUser(verified("auth-3", "pat@example.com"))).toMatchObject({ role: "Passenger" });
+    expect(await db.user.count()).toBe(3);
+  });
+
+  it("enforces one app user per Neon Auth user", async () => {
+    await db.user.create({ data: { name: "A", email: "a@example.com", authUserId: "auth-x" } });
+    await expect(db.user.create({ data: { name: "B", email: "b@example.com", authUserId: "auth-x" } })).rejects.toThrow();
   });
 });

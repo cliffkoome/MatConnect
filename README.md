@@ -10,7 +10,7 @@ cycle turns them into ETAs.
 ## Features
 
 - **Passengers** — pick a stage, see live ETAs (refreshes every 30 s), subscribe to an SMS alert for the
-  next arrival, rate rides, manage profile and TOTP two-factor auth, sign in with email or Google.
+  next arrival, rate rides, manage profile, sign in with email (verified by an emailed code) or Google.
 - **Admins** — live fleet status with street-level locations, stage & route management, vehicle
   registry, user management (search, filter, block, delete, create admins), feedback feed.
 - **Matatu admins** — today's fleet totals, per-vehicle distance/trips for any day, daily/weekly/monthly
@@ -25,7 +25,7 @@ src/
 │  └─ (pages)               React client pages (/, /login, /stages, /admin, /mat-admin, …)
 ├─ server/                  server-only code (never imported by client components — lint-enforced)
 │  ├─ http/                 route() wrapper, error mapping, rate limiting
-│  ├─ auth/                 JWTs (jose), bcrypt, TOTP, guard, cookies, Google OAuth
+│  ├─ auth/                 Neon Auth instance (neon.ts) and the API guard
 │  ├─ modules/<feature>/    business logic per feature (auth, admin, mat-admin, stages, eta, feedback, vehicles)
 │  ├─ domain/               pure logic, no I/O: ETA classification, geo maths, date periods, phone numbers
 │  ├─ integrations/         Firebase RTDB, Google Maps, Africa's Talking SMS, SMTP
@@ -40,13 +40,19 @@ tests/                      unit/, api/ (route handlers), integration/ (real Pos
 docs/MIGRATIONS.md          migration rules
 ```
 
-Request flow: `route()` applies the rate limit, authenticates the bearer token (checking the user row,
-so blocking a user or resetting a password takes effect immediately), awaits params, runs the handler
-and maps `HttpError` / Zod / Prisma errors to `{ message, errors? }` JSON.
+Request flow: `route()` applies the rate limit, authenticates the Neon Auth session cookie (checking
+the `users` row, so blocking a user or changing a role takes effect immediately), awaits params, runs
+the handler and maps `HttpError` / Zod / Prisma errors to `{ message, errors? }` JSON.
 
-**Auth:** short-lived access token (15 min) in the `Authorization` header, httpOnly refresh cookie
-(7 days, `SameSite=Lax`, path `/api/auth`) with rotation and reuse detection. Every JWT carries a `typ`
-claim so a 2FA temp token can't be used as an access token. Revoked token IDs live in Postgres.
+**Auth:** [Neon Auth](https://neon.com/docs/auth/overview) (Managed Better Auth). Users, passwords,
+sessions and Google sign-in live in the branch's `neon_auth` schema; the browser talks to it through
+the same-origin proxy `/api/auth/[...path]` using `@neon/auth` (httpOnly cookies, nothing in
+localStorage). Email verification and password reset use 6-digit codes that Neon Auth emails.
+The app's `users` table keeps the role, phone and disabled flag and links to Neon Auth by
+`auth_user_id`: on a user's first verified sign-in it is created (the very first user becomes the
+Admin) or, if an Admin already added that email, linked with the role they were given.
+`src/proxy.ts` runs Neon Auth's middleware for pages (Google hand-off, session refresh, redirect to
+`/login`); API routes check the session themselves.
 
 **ETA cycle:** reads all GPS fixes from Firebase, computes ETAs per stage (Google Directions, only
 inside a 5 km geofence), publishes them to Firebase `etas/<stage>`, counts a trip once per arrival,
@@ -73,14 +79,19 @@ Prerequisites: Node.js ≥ 22 and a Neon project (or any PostgreSQL 15+).
 git clone https://github.com/cliffkoome/MatConnect && cd MatConnect
 npm install                       # also runs `prisma generate`
 cp .env.example .env              # read by Next.js, the Prisma CLI and scripts
-# fill in DATABASE_URL (pooled), DIRECT_URL (direct) and the two JWT secrets
-npm run db:migrate:deploy         # create the schema
-npm run db:seed                   # optional demo data (password: matconnect123)
+npx neon@latest login
+npx neon@latest checkout dev --create   # your own Neon branch; writes DATABASE_URL* and NEON_AUTH_* to .env
+# set NEON_AUTH_COOKIE_SECRET in .env (32+ random characters, see .env.example)
+npm run db:migrate:deploy         # create the schema on that branch
+npm run db:seed                   # optional demo data (see SEED_*_EMAIL in .env.example)
 npm run dev                       # http://localhost:3000
 ```
 
-The first account to register becomes the Admin. Optional integrations (Google sign-in, Maps, Firebase,
-SMS, email) switch on when their variables are set; see `.env.example`.
+The first account to sign in becomes the Admin. Google sign-in works out of the box with Neon's shared
+development credentials (use your own for production: `neon neon-auth oauth-provider`), and Neon Auth
+sends the verification and reset emails from its shared sender until you configure SMTP
+(`neon neon-auth config email-provider`). Optional integrations (Maps, Firebase, SMS) switch on when
+their variables are set; see `.env.example`.
 
 ## Scripts
 
@@ -112,7 +123,7 @@ CI (`.github/workflows/`):
 
 ## API
 
-Same endpoints as the Express version (`api-tests.http` has a request for each):
-`/api/auth/*` (register, login, refresh, logout, me, profile, password reset, 2FA, Google),
+Endpoints (`api-tests.http` has a request for each):
+`/api/auth/me` (profile), Neon Auth under `/api/auth/*` (sign-up, sign-in, Google, sign-out, codes),
 `/api/stages`, `/api/eta/:stageId`, `/api/feedback`, `/api/admin/*`, `/api/mat-admin/*`,
 plus `/api/health` and `/api/cron/eta-cycle`. Old `*.html` page URLs redirect to the new routes.

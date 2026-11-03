@@ -54,8 +54,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/matconnect
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/matconnect
       SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/matconnect_shadow
-      JWT_SECRET: ci-access-secret-0123456789abcdefghijklmnop
-      JWT_REFRESH_SECRET: ci-refresh-secret-0123456789abcdefghijklmnop
+      NEON_AUTH_BASE_URL: https://auth.ci.invalid/neondb/auth
+      NEON_AUTH_COOKIE_SECRET: ci-cookie-secret-0123456789abcdefghijklmnop
     steps:
       - uses: actions/checkout@v4
         with:
