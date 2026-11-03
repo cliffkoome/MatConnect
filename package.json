@@ -70,5 +70,10 @@
     "typescript": "^6.0.3",
     "vitest": "^5.0.5",
     "vitest-mock-extended": "^5.1.1"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.4"
+    }
   }
 }
