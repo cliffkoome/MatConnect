@@ -9,11 +9,12 @@ production. The rules below are enforced automatically where possible (see [Enfo
 | Variable | Used by | Neon value |
 | --- | --- | --- |
 | `DATABASE_URL` | the app at runtime | **pooled** URL (host contains `-pooler`) |
-| `DIRECT_URL` | Prisma CLI (`migrate`, `db`, `studio`, seed) | **direct** URL (no `-pooler`) |
+| `DIRECT_URL` or `DATABASE_URL_UNPOOLED` | Prisma CLI (`migrate`, `db`, `studio`, seed) | **direct** URL (no `-pooler`); the Neon CLI writes `DATABASE_URL_UNPOOLED`, `DIRECT_URL` wins if set |
 | `SHADOW_DATABASE_URL` | `migrate dev` / drift checks, optional | a throwaway database or Neon branch |
 
 Migrations need a direct session (advisory locks, DDL in one connection), which PgBouncer's
-transaction pooling doesn't provide — so `prisma.config.ts` always gives the CLI `DIRECT_URL` when set.
+transaction pooling doesn't provide — so `prisma.config.ts` always gives the CLI `DIRECT_URL` (or
+`DATABASE_URL_UNPOOLED`) when set.
 
 ## Everyday workflow
 
@@ -144,7 +145,7 @@ init migration creates the Postgres schema from scratch; copy data across once, 
 
 | MariaDB (Sequelize) | Postgres | Notes |
 | --- | --- | --- |
-| `Users` | `users` | camelCase → snake_case columns; `role` → enum `user_role`; bcrypt hashes and 2FA secrets carry over unchanged |
+| `Users` | `users` | camelCase → snake_case columns; `role` → enum `user_role`; passwords, Google IDs and 2FA secrets don't carry over: identity moved to Neon Auth (migration `20261104000000_neon_auth`) |
 | `Stages` | `stages` | |
 | `Vehicles` | `vehicles` | `deletedAt` keeps soft-deleted rows |
 | `StageVehicles` (`StageId`, `VehicleId`) | `stage_vehicles` (`stage_id`, `vehicle_id`) | |

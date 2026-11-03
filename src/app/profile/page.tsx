@@ -16,10 +16,6 @@ export default function ProfilePage() {
   const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // 2FA modal state
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [code, setCode] = useState("");
-
   useEffect(() => {
     if (!ready) return;
     api<Profile>("/api/auth/me")
@@ -46,40 +42,6 @@ export default function ProfilePage() {
       setSaving(false);
     }
   }
-
-  async function toggleTwoFactor() {
-    if (!profile) return;
-    try {
-      if (profile.twoFactorEnabled) {
-        if (!confirm("Are you sure you want to disable Two-Factor Authentication?")) return;
-        await api("/api/auth/2fa/disable", { method: "POST" });
-        setProfile({ ...profile, twoFactorEnabled: false });
-        setNotice({ text: "2FA has been disabled.", ok: true });
-      } else {
-        const data = await api<{ qrCodeUrl: string }>("/api/auth/2fa/setup", { method: "POST" });
-        setQrCode(data.qrCodeUrl);
-      }
-    } catch (error) {
-      setNotice({ text: `Error: ${errorMessage(error)}`, ok: false });
-    }
-  }
-
-  async function verifyTwoFactor() {
-    if (!/^\d{6}$/.test(code)) return alert("Please enter a valid 6-digit code.");
-    try {
-      await api("/api/auth/2fa/verify", { method: "POST", body: { token: code } });
-      setProfile((p) => (p ? { ...p, twoFactorEnabled: true } : p));
-      setNotice({ text: "2FA enabled successfully!", ok: true });
-      closeModal();
-    } catch (error) {
-      alert(`Verification failed: ${errorMessage(error)}`);
-    }
-  }
-
-  const closeModal = () => {
-    setQrCode(null);
-    setCode("");
-  };
 
   const avatar = profile?.profilePictureUrl || DEFAULT_AVATAR;
   const home = profile?.role === "Admin" ? "/admin" : profile?.role === "MatAdmin" ? "/mat-admin" : "/stages";
@@ -166,90 +128,20 @@ export default function ProfilePage() {
               </form>
             </div>
 
-            {profile && !profile.isGoogleUser && (
-              <>
-                <hr className="divider" />
-                <div className="two-factor-section">
-                  <h3>Two-Factor Authentication (2FA)</h3>
-                  <div className="two-factor-content">
-                    <div className="form-group">
-                      <p>
-                        Status:{" "}
-                        <span className={`status-badge ${profile.twoFactorEnabled ? "enabled" : "disabled"}`}>
-                          {profile.twoFactorEnabled ? "Enabled" : "Disabled"}
-                        </span>
-                      </p>
-                      <p className="description">
-                        Add an extra layer of security to your account by requiring a second verification step when
-                        you sign in.
-                      </p>
-                    </div>
-                    <div className="form-group">
-                      <button className="btn btn-secondary" onClick={toggleTwoFactor}>
-                        {profile.twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <hr className="divider" />
-                <div className="password-reset-section">
-                  <h3>Password Reset</h3>
-                  <p className="description" style={{ marginBottom: "1rem" }}>
-                    To change your password, use the &quot;Forgot Password&quot; flow.
-                  </p>
-                  <Link href="/forgot-password" className="btn btn-secondary">
-                    Go to Password Reset
-                  </Link>
-                </div>
-              </>
-            )}
+            <hr className="divider" />
+            <div className="password-reset-section">
+              <h3>Password</h3>
+              <p className="description" style={{ marginBottom: "1rem" }}>
+                To change your password, we&apos;ll email you a reset code. (If you only sign in with Google, this
+                also lets you add a password.)
+              </p>
+              <Link href="/forgot-password" className="btn btn-secondary">
+                Go to Password Reset
+              </Link>
+            </div>
           </div>
         </main>
 
-        {qrCode && (
-          <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-            <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="twofa-title">
-              <header className="modal-header">
-                <h3 id="twofa-title">Set Up Two-Factor Authentication</h3>
-                <button className="icon-button" onClick={closeModal} aria-label="Close">
-                  <Icon name="close" />
-                </button>
-              </header>
-              <div className="modal-body">
-                <p>
-                  Scan the QR code below with your authenticator app (like Google Authenticator or Authy), then enter
-                  the 6-digit code to verify.
-                </p>
-                <div className="qr-code-container">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- data: URL */}
-                  <img src={qrCode} alt="QR Code for 2FA" />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="twofa-verify-token">Verification Code</label>
-                  <input
-                    type="text"
-                    id="twofa-verify-token"
-                    className="form-input"
-                    placeholder="Enter 6-digit code"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  />
-                </div>
-              </div>
-              <footer className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={closeModal}>
-                  Cancel
-                </button>
-                <button type="button" className="btn btn-primary" onClick={verifyTwoFactor}>
-                  Verify &amp; Enable
-                </button>
-              </footer>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

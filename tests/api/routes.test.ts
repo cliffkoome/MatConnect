@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { dbMock, resetDbMock } from "../support/db-mock";
-import { PASSWORD, passwordHash, userRow } from "../support/fixtures";
+import { userRow } from "../support/fixtures";
 
 /**
  * Route-level tests: call the exported Next.js handlers directly with a NextRequest, with Prisma
- * mocked. They check the HTTP contract (status codes, cookies, auth/role enforcement) end to end
- * through route() → guard → service.
+ * and the Neon Auth session mocked. They check the HTTP contract (status codes, auth/role
+ * enforcement, first-sign-in provisioning) end to end through route() → guard → service.
  */
 
 vi.mock("@/server/db", async () => (await import("../support/db-mock")).dbModule);
@@ -17,14 +17,16 @@ vi.mock("@/server/integrations/firebase", () => ({
   publishStageEtas: vi.fn(),
 }));
 
-const { tokens } = await import("@/server/auth/context");
+// Neon Auth: the session comes from the request cookies via getSession(); handler() is the proxy.
+const getSession = vi.fn();
+const upstream = { GET: vi.fn(), POST: vi.fn(), PUT: vi.fn(), DELETE: vi.fn(), PATCH: vi.fn() };
+vi.mock("@/server/auth/neon", () => ({ neonAuth: () => ({ getSession, handler: () => upstream }) }));
 
 const ctx = <P extends Record<string, string>>(params = {} as P) => ({ params: Promise.resolve(params) });
-const req = (path: string, init: { method?: string; body?: unknown; token?: string; cookie?: string; ip?: string } = {}) => {
+const req = (path: string, init: { method?: string; body?: unknown; token?: string; ip?: string } = {}) => {
   const headers = new Headers({ "x-forwarded-for": init.ip ?? "10.0.0.1" });
   if (init.body !== undefined) headers.set("content-type", "application/json");
   if (init.token) headers.set("authorization", `Bearer ${init.token}`);
-  if (init.cookie) headers.set("cookie", init.cookie);
   return new NextRequest(`http://localhost:3000${path}`, {
     method: init.method ?? "GET",
     headers,
@@ -32,124 +34,139 @@ const req = (path: string, init: { method?: string; body?: unknown; token?: stri
   });
 };
 
-async function tokenFor(user: ReturnType<typeof userRow>) {
+const signedOut = () => getSession.mockResolvedValue({ data: null, error: null });
+
+/** Signs the request in as this app user (already linked to a verified Neon Auth user). */
+function signInAs(user: ReturnType<typeof userRow>, { emailVerified = true } = {}) {
+  getSession.mockResolvedValue({
+    data: {
+      session: { id: "s1" },
+      user: { id: user.authUserId ?? "auth-new", email: user.email, name: user.name, image: null, emailVerified },
+    },
+    error: null,
+  });
   dbMock.user.findUnique.mockResolvedValue(user);
-  dbMock.revokedToken.findUnique.mockResolvedValue(null);
-  return tokens().signAccess(user);
 }
 
-beforeEach(() => resetDbMock());
+beforeEach(() => {
+  resetDbMock();
+  getSession.mockReset();
+  signedOut();
+});
 
-describe("POST /api/auth/login", async () => {
-  const { POST } = await import("@/app/api/auth/login/route");
+describe("/api/auth/[...path] (Neon Auth proxy)", async () => {
+  const route = await import("@/app/api/auth/[...path]/route");
 
-  it("returns the access token and sets an httpOnly refresh cookie scoped to /api/auth", async () => {
-    dbMock.user.findUnique.mockResolvedValue(userRow({ id: 2, password: await passwordHash() }));
-    const res = await POST(req("/api/auth/login", { method: "POST", body: { email: "ADA@example.com ", password: PASSWORD } }), ctx());
-
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body).toEqual({ message: "Login successful", accessToken: expect.any(String), role: "Passenger" });
-    const cookie = res.headers.get("set-cookie") ?? "";
-    expect(cookie).toMatch(/^refreshToken=/);
-    expect(cookie).toMatch(/HttpOnly/i);
-    expect(cookie).toMatch(/Path=\/api\/auth/);
-    expect(cookie).toMatch(/SameSite=lax/i);
-    // Email was normalised before the lookup.
-    expect(dbMock.user.findUnique).toHaveBeenCalledWith({ where: { email: "ada@example.com" } });
-  });
-
-  it("returns 400 with field errors for invalid input", async () => {
-    const res = await POST(req("/api/auth/login", { method: "POST", body: { email: "nope" } }), ctx());
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.errors.map((e: { field: string }) => e.field)).toEqual(["email", "password"]);
-  });
-
-  it("rate-limits after 100 attempts per IP", async () => {
-    dbMock.user.findUnique.mockResolvedValue(null);
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    let last: Response | undefined;
-    for (let i = 0; i < 101; i++) {
-      last = await POST(req("/api/auth/login", { method: "POST", body: {}, ip: "203.0.113.50" }), ctx());
+  it("forwards every method to the Neon Auth handler", async () => {
+    for (const method of ["GET", "POST", "PUT", "DELETE", "PATCH"] as const) {
+      upstream[method].mockResolvedValue(new Response(method));
+      const context = { params: Promise.resolve({ path: ["sign-in", "email"] }) };
+      const res = await route[method](req("/api/auth/sign-in/email", { method }), context);
+      expect(await res.text()).toBe(method);
+      expect(upstream[method]).toHaveBeenCalledWith(expect.any(Request), context);
     }
-    expect(last!.status).toBe(429);
-    expect(last!.headers.get("retry-after")).toBeTruthy();
   });
 });
 
-describe("POST /api/auth/2fa/login", async () => {
-  const { POST } = await import("@/app/api/auth/2fa/login/route");
-  it("rejects malformed codes before touching the database", async () => {
-    const res = await POST(req("/api/auth/2fa/login", { method: "POST", body: { tempToken: "x", token: "12ab" } }), ctx());
-    expect(res.status).toBe(400);
+describe("/api/auth/me", async () => {
+  const { GET, PUT } = await import("@/app/api/auth/me/route");
+
+  it("401s when signed out", async () => {
+    const res = await GET(req("/api/auth/me"), ctx());
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ message: "Access denied. Please sign in." });
+  });
+
+  it("403s until the email is verified", async () => {
+    signInAs(userRow(), { emailVerified: false });
+    const res = await GET(req("/api/auth/me"), ctx());
+    expect(res.status).toBe(403);
     expect(dbMock.user.findUnique).not.toHaveBeenCalled();
   });
-});
 
-describe("POST /api/auth/refresh-token", async () => {
-  const { POST } = await import("@/app/api/auth/refresh-token/route");
+  it("creates the app user on first sign-in and returns the profile without internal ids", async () => {
+    getSession.mockResolvedValue({
+      data: { session: { id: "s1" }, user: { id: "auth-42", email: "pat@example.com", name: "Pat", image: null, emailVerified: true } },
+      error: null,
+    });
+    const created = userRow({ id: 42, authUserId: "auth-42", email: "pat@example.com", name: "Pat" });
+    // Not linked yet, no row with that email → created; then the profile read finds it.
+    dbMock.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValue(created);
+    dbMock.user.count.mockResolvedValue(3);
+    dbMock.user.create.mockResolvedValue(created);
 
-  it("rotates the cookie", async () => {
-    const user = userRow({ id: 3 });
-    const access = await tokens().signAccess(user);
-    const refresh = await tokens().signRefresh(3);
-    dbMock.revokedToken.count.mockResolvedValue(0);
-    dbMock.user.findUnique.mockResolvedValue(user);
-
-    const res = await POST(req("/api/auth/refresh-token", { method: "POST", token: access, cookie: `refreshToken=${refresh}` }), ctx());
-
+    const res = await GET(req("/api/auth/me"), ctx());
     expect(res.status).toBe(200);
-    expect((await res.json()).accessToken).toEqual(expect.any(String));
-    const newCookie = res.headers.get("set-cookie")!;
-    expect(newCookie).toMatch(/^refreshToken=/);
-    expect(newCookie).not.toContain(refresh);
+    const body = await res.json();
+    expect(body).toMatchObject({ id: 42, email: "pat@example.com", role: "Passenger" });
+    expect(body).not.toHaveProperty("authUserId");
+    expect(dbMock.user.create.mock.calls[0]![0].data).toMatchObject({ authUserId: "auth-42", role: "Passenger" });
   });
 
-  it("401s without the cookie", async () => {
-    const res = await POST(req("/api/auth/refresh-token", { method: "POST" }), ctx());
-    expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "Refresh token missing" });
+  it("403s for a blocked account", async () => {
+    signInAs(userRow({ disabled: true }));
+    expect((await GET(req("/api/auth/me"), ctx())).status).toBe(403);
   });
-});
 
-describe("POST /api/auth/logout", async () => {
-  const { POST } = await import("@/app/api/auth/logout/route");
-  it("revokes the access token and clears the cookie, even without a valid session", async () => {
-    const access = await tokens().signAccess(userRow({ id: 3 }));
-    const res = await POST(req("/api/auth/logout", { method: "POST", token: access }), ctx());
+  it("updates the signed-in user's own profile", async () => {
+    signInAs(userRow({ id: 5 }));
+    dbMock.user.updateMany.mockResolvedValue({ count: 1 });
+    const res = await PUT(req("/api/auth/me", { method: "PUT", body: { name: "New Name" } }), ctx());
     expect(res.status).toBe(200);
-    expect(res.headers.get("set-cookie")).toMatch(/refreshToken=;.*Max-Age=0/i);
-    expect(dbMock.revokedToken.upsert).toHaveBeenCalledTimes(1);
+    expect(dbMock.user.updateMany).toHaveBeenCalledWith({ where: { id: 5 }, data: { name: "New Name" } });
+  });
 
-    const anonymous = await POST(req("/api/auth/logout", { method: "POST" }), ctx());
-    expect(anonymous.status).toBe(200);
+  it("rate-limits after 100 requests per IP", async () => {
+    let last: Response | undefined;
+    for (let i = 0; i < 101; i++) last = await GET(req("/api/auth/me", { ip: "203.0.113.50" }), ctx());
+    expect(last!.status).toBe(429);
+    expect(last!.headers.get("retry-after")).toBeTruthy();
   });
 });
 
 describe("role enforcement on /api/admin/*", async () => {
   const { GET } = await import("@/app/api/admin/users/route");
 
-  it("401s without a token", async () => {
+  it("401s when signed out", async () => {
     const res = await GET(req("/api/admin/users"), ctx());
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "Access denied. No token provided." });
   });
 
   it("403s for a Passenger", async () => {
-    const token = await tokenFor(userRow({ id: 4, role: "Passenger" }));
-    const res = await GET(req("/api/admin/users", { token }), ctx());
+    signInAs(userRow({ id: 4, role: "Passenger" }));
+    const res = await GET(req("/api/admin/users"), ctx());
     expect(res.status).toBe(403);
   });
 
   it("lets an Admin list users with pagination", async () => {
-    const token = await tokenFor(userRow({ id: 1, role: "Admin" }));
-    dbMock.user.findMany.mockResolvedValue([]);
-    dbMock.user.count.mockResolvedValue(0);
-    const res = await GET(req("/api/admin/users?q=pat&limit=10&offset=20", { token }), ctx());
+    signInAs(userRow({ id: 1, role: "Admin" }));
+    dbMock.user.findMany.mockResolvedValue([
+      { id: 2, name: "Pat", email: "pat@example.com", role: "Passenger", authUserId: "a2", disabled: false, createdAt: new Date(0) },
+      { id: 3, name: "Owen", email: "owen@example.com", role: "MatAdmin", authUserId: null, disabled: false, createdAt: new Date(0) },
+    ] as never);
+    dbMock.user.count.mockResolvedValue(2);
+    const res = await GET(req("/api/admin/users?q=pat&limit=10&offset=20"), ctx());
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ users: [], total: 0 });
+    const body = await res.json();
+    expect(body.total).toBe(2);
+    expect(body.users.map((u: { activated: boolean }) => u.activated)).toEqual([true, false]);
+    expect(body.users[0]).not.toHaveProperty("authUserId");
     expect(dbMock.user.findMany.mock.calls[0]![0]).toMatchObject({ take: 10, skip: 20 });
+  });
+});
+
+describe("POST /api/admin/users", async () => {
+  const { POST } = await import("@/app/api/admin/users/route");
+
+  it("adds a user by email and role, with no password (Neon Auth owns passwords)", async () => {
+    signInAs(userRow({ id: 1, role: "Admin" }));
+    dbMock.user.create.mockResolvedValue(userRow({ id: 8, authUserId: null, email: "owner@example.com", role: "MatAdmin" }));
+    const res = await POST(
+      req("/api/admin/users", { method: "POST", body: { name: "Owner", email: "Owner@Example.com", role: "MatAdmin", password: "ignored" } }),
+      ctx(),
+    );
+    expect(res.status).toBe(201);
+    expect(dbMock.user.create).toHaveBeenCalledWith({ data: { name: "Owner", email: "owner@example.com", role: "MatAdmin" } });
   });
 });
 
@@ -158,21 +175,21 @@ describe("dynamic params", async () => {
   const { GET: getEta } = await import("@/app/api/eta/[stageId]/route");
 
   it("validates numeric path params", async () => {
-    const token = await tokenFor(userRow({ id: 1, role: "Admin" }));
-    const res = await DELETE(req("/api/admin/stages/abc/vehicles/1", { method: "DELETE", token }), ctx({ stageId: "abc", vehicleId: "1" }));
+    signInAs(userRow({ id: 1, role: "Admin" }));
+    const res = await DELETE(req("/api/admin/stages/abc/vehicles/1", { method: "DELETE" }), ctx({ stageId: "abc", vehicleId: "1" }));
     expect(res.status).toBe(400);
     expect((await res.json()).errors[0]).toEqual({ field: "stageId", message: "Stage ID must be a positive integer" });
   });
 
   it("returns ETAs for a stage (Offline when there's no GPS fix)", async () => {
-    const token = await tokenFor(userRow({ id: 4 }));
+    signInAs(userRow({ id: 4 }));
     dbMock.stage.findUnique.mockResolvedValue({
       name: "Kencom",
       latitude: -1.28,
       longitude: 36.82,
       vehicles: [{ vehicle: { id: 1, carId: "CAR_1", plateNumber: "KDH 1", lastLatitude: null, lastLongitude: null } }],
     } as never);
-    const res = await getEta(req("/api/eta/1", { token }), ctx({ stageId: "1" }));
+    const res = await getEta(req("/api/eta/1"), ctx({ stageId: "1" }));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       stageName: "Kencom",
@@ -193,7 +210,6 @@ describe("GET /api/cron/eta-cycle", async () => {
     dbMock.$executeRaw.mockResolvedValue(1);
     dbMock.stage.findMany.mockResolvedValue([]);
     dbMock.vehicle.findMany.mockResolvedValue([]);
-    dbMock.revokedToken.deleteMany.mockResolvedValue({ count: 0 });
     const res = await GET(req("/api/cron/eta-cycle", { token: "test-cron-secret-123456" }));
     expect(res.status).toBe(200);
     expect((await res.json()).runs[0]).toMatchObject({ skipped: false, stages: 0 });

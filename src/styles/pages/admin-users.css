@@ -374,6 +374,17 @@
   color: var(--red-dark);
 }
 
+.page-admin-users .badge-warning {
+  background-color: var(--orange-light);
+  color: var(--orange-dark);
+}
+
+.page-admin-users .form-hint {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--text-muted-light);
+}
+
 /* Sidebar */
 .page-admin-users .grid-sidebar {
   display: flex;

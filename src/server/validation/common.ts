@@ -4,12 +4,6 @@ import { z } from "zod";
 export const email = (message = "Please provide a valid email") =>
   z.string({ error: message }).trim().toLowerCase().pipe(z.email(message));
 
-/** bcrypt only looks at the first 72 bytes, so longer passwords give a false sense of security. */
-export const newPassword = z
-  .string({ error: "Password must be at least 6 characters long" })
-  .min(6, "Password must be at least 6 characters long")
-  .max(72, "Password must be at most 72 characters long");
-
 export const personName = (message = "Name is required") =>
   z.string({ error: message }).trim().min(1, message).max(100, "Name is too long");
 
@@ -26,7 +20,3 @@ export const pagination = (defaultLimit = 25, maxLimit = 100) =>
     offset: z.coerce.number().int().min(0).catch(0).default(0),
   });
 
-export const otpCode = z
-  .string({ error: "Please enter a valid 6-digit code." })
-  .trim()
-  .regex(/^\d{6}$/, "Please enter a valid 6-digit code.");

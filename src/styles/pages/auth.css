@@ -166,6 +166,20 @@
   color: rgb(19 127 236 / 0.8);
 }
 
+/* "Send a new code" is an action, styled as a text link. */
+.page-auth button.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.page-auth button.link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .page-auth .button {
   display: flex;
   justify-content: center;

@@ -11,15 +11,9 @@ export type Profile = {
   role: Role;
   phoneNumber: string | null;
   profilePictureUrl: string | null;
-  twoFactorEnabled: boolean;
   disabled: boolean;
-  isGoogleUser: boolean;
   createdAt: string;
 };
-
-export type LoginResponse =
-  | { twoFactorRequired: true; tempToken: string }
-  | { message: string; accessToken: string; role: Role; twoFactorRequired?: undefined };
 
 export type Stage = { id: number; name: string; latitude: number; longitude: number };
 
@@ -62,7 +56,8 @@ export type UserRow = {
   name: string;
   email: string;
   role: Role;
-  twoFactorEnabled: boolean;
+  /** False for a user an Admin added who hasn't signed up yet. */
+  activated: boolean;
   disabled: boolean;
 };
 

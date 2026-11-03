@@ -15,7 +15,7 @@ const ROLE_FILTERS: { label: string; role: Role | "" }[] = [
   { label: "Passengers", role: "Passenger" },
 ];
 
-const emptyForm = { name: "", email: "", password: "", role: "MatAdmin" as "MatAdmin" | "Admin" };
+const emptyForm = { name: "", email: "", role: "MatAdmin" as "MatAdmin" | "Admin" };
 
 export default function ManageUsersPage() {
   const ready = useRoleGuard("Admin");
@@ -30,7 +30,6 @@ export default function ManageUsersPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -104,7 +103,6 @@ export default function ManageUsersPage() {
   const closeModal = () => {
     setModalOpen(false);
     setForm(emptyForm);
-    setShowPassword(false);
   };
 
   return (
@@ -175,8 +173,11 @@ export default function ManageUsersPage() {
                           <span className={`badge-role role-${user.role.toLowerCase()}`}>{user.role}</span>
                         </td>
                         <td>
-                          <span className={`badge ${user.disabled ? "badge-danger" : "badge-success"}`}>
-                            {user.disabled ? "Blocked" : "Active"}
+                          <span
+                            className={`badge ${user.disabled ? "badge-danger" : user.activated ? "badge-success" : "badge-warning"}`}
+                            title={user.activated ? undefined : "Hasn't signed up yet"}
+                          >
+                            {user.disabled ? "Blocked" : user.activated ? "Active" : "Invited"}
                           </span>
                         </td>
                         <td className="actions-cell">
@@ -222,27 +223,9 @@ export default function ManageUsersPage() {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="user-password-input">Password</label>
-                  <div className="password-wrapper">
-                    <input
-                      id="user-password-input"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      minLength={6}
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      className="icon-button password-toggle-btn"
-                      title={showPassword ? "Hide password" : "Show password"}
-                      onClick={() => setShowPassword((s) => !s)}
-                    >
-                      <Icon name={showPassword ? "visibility_off" : "visibility"} />
-                    </button>
-                  </div>
-                </div>
+                <p className="form-hint">
+                  They get this role when they sign up (or sign in with Google) using this email address.
+                </p>
                 <div className="form-group">
                   <label htmlFor="user-role-select">Role</label>
                   <select

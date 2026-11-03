@@ -1,92 +1,91 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { api, errorMessage } from "@/lib/client/api";
-import { homePathFor, setSession } from "@/lib/client/session";
-import type { LoginResponse, Role } from "@/lib/client/types";
+import { authClient, authErrorMessage, isEmailNotVerified } from "@/lib/auth/client";
+import { useEmailVerification } from "@/lib/auth/use-email-verification";
+import { goHome } from "@/lib/client/session";
 
 const OAUTH_ERRORS: Record<string, string> = {
   auth_failed: "Authentication failed. Please try again.",
   account_disabled: "Your account has been disabled. Please contact an administrator.",
-  google_unavailable: "Google sign-in is not configured on this server.",
 };
 
 type Message = { text: string; type: "error" | "success" | "info" };
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const oauthError = params.get("error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
-  const [tempToken, setTempToken] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(
-    oauthError
-      ? { text: OAUTH_ERRORS[oauthError] ?? OAUTH_ERRORS.auth_failed!, type: "error" }
-      : params.get("registered")
-        ? { text: "Account created — please log in.", type: "success" }
-        : null,
+    oauthError ? { text: OAUTH_ERRORS[oauthError] ?? OAUTH_ERRORS.auth_failed!, type: "error" } : null,
   );
+  const verification = useEmailVerification(email.trim());
 
-  const finish = (accessToken: string, role: Role) => {
-    setSession(accessToken, role);
-    router.replace(homePathFor(role));
-  };
+  async function finishSignIn() {
+    if (await goHome()) return;
+    // Signed in to Neon Auth, but the API refused the account (e.g. blocked by an Admin).
+    await authClient.signOut().catch(() => undefined);
+    setMessage({ text: OAUTH_ERRORS.account_disabled!, type: "error" });
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
+
+    if (verifying) {
+      const result = await verification.verify();
+      if (!result.ok) setMessage({ text: result.message, type: "error" });
+      return;
+    }
+
     setBusy(true);
     try {
-      if (tempToken) {
-        if (!/^\d{6}$/.test(code)) {
-          setMessage({ text: "Please enter a valid 6-digit code.", type: "error" });
-          return;
-        }
-        try {
-          const data = await api<{ accessToken: string; role: Role }>("/api/auth/2fa/login", {
-            method: "POST",
-            auth: false,
-            body: { tempToken, token: code },
-          });
-          finish(data.accessToken, data.role);
-        } catch (error) {
-          setMessage({ text: errorMessage(error), type: "error" });
-          setCode("");
-        }
+      const { error } = await authClient.signIn.email({ email: email.trim(), password });
+      if (isEmailNotVerified(error)) {
+        // Neon Auth emails a fresh code on every sign-in attempt while the email is unverified.
+        setVerifying(true);
+        setMessage({ text: `Please verify your email first: we've sent a 6-digit code to ${email.trim()}.`, type: "info" });
         return;
       }
-
-      const data = await api<LoginResponse>("/api/auth/login", {
-        method: "POST",
-        auth: false,
-        body: { email, password },
-      });
-      if (data.twoFactorRequired) {
-        setTempToken(data.tempToken);
-      } else {
-        finish(data.accessToken, data.role);
+      if (error) {
+        setMessage({ text: authErrorMessage(error), type: "error" });
+        return;
       }
-    } catch (error) {
-      setMessage({ text: errorMessage(error), type: "error" });
+      await finishSignIn();
     } finally {
       setBusy(false);
     }
   }
+
+  async function resendCode() {
+    const result = await verification.resend();
+    setMessage(result.ok ? { text: "We've sent you a new code.", type: "success" } : { text: result.message, type: "error" });
+  }
+
+  async function signInWithGoogle() {
+    setMessage(null);
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/auth/success",
+      errorCallbackURL: "/login?error=auth_failed",
+    });
+    if (error) setMessage({ text: authErrorMessage(error), type: "error" });
+  }
+
+  const pending = busy || verification.busy;
 
   return (
     <div className="container">
       <div className="form-wrapper">
         <div className="text-center">
           <h1 className="title">Welcome Back to MatConnect</h1>
-          <p className="subtitle">
-            {tempToken ? "Enter the 6-digit code from your authenticator app." : "Sign in to continue"}
-          </p>
+          <p className="subtitle">{verifying ? "Enter the 6-digit code we emailed you." : "Sign in to continue"}</p>
         </div>
 
         {message && (
@@ -97,7 +96,7 @@ export function LoginForm() {
 
         <form className="form" onSubmit={onSubmit}>
           <div className="input-container">
-            {!tempToken ? (
+            {!verifying ? (
               <>
                 <div>
                   <label htmlFor="email-address" className="sr-only">
@@ -134,53 +133,53 @@ export function LoginForm() {
               </>
             ) : (
               <div>
-                <label htmlFor="two-factor-token" className="sr-only">
-                  2FA code
+                <label htmlFor="verification-code" className="sr-only">
+                  Verification code
                 </label>
                 <input
                   type="text"
-                  id="two-factor-token"
-                  name="two-factor-token"
-                  placeholder="6-digit code from your app"
+                  id="verification-code"
+                  name="verification-code"
+                  placeholder="6-digit code from the email"
                   autoComplete="one-time-code"
                   className="input"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={6}
                   autoFocus
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                  value={verification.code}
+                  onChange={(e) => verification.setCode(e.target.value)}
                 />
               </div>
             )}
           </div>
           <div className="flex-between">
             <div className="text-sm">
-              <Link href="/forgot-password" className="link">
-                Forgot Password?
-              </Link>
+              {verifying ? (
+                <button type="button" className="link" onClick={() => void resendCode()} disabled={pending}>
+                  Send a new code
+                </button>
+              ) : (
+                <Link href="/forgot-password" className="link">
+                  Forgot Password?
+                </Link>
+              )}
             </div>
           </div>
           <div>
-            <button type="submit" className="button" disabled={busy}>
-              {busy ? "Please wait…" : tempToken ? "Verify Code" : "Login"}
+            <button type="submit" className="button" disabled={pending}>
+              {pending ? "Please wait…" : verifying ? "Verify Email" : "Login"}
             </button>
           </div>
         </form>
 
-        {!tempToken && (
+        {!verifying && (
           <>
             <div className="divider">
               <span>OR</span>
             </div>
             <div>
-              <button
-                type="button"
-                className="button google-button"
-                // An API route that redirects to Google, so it must be a full navigation.
-                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-                onClick={() => (window.location.href = "/api/auth/google")}
-              >
+              <button type="button" className="button google-button" onClick={() => void signInWithGoogle()}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- small static logo */}
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="" width={20} height={20} /> Sign in
                 with Google

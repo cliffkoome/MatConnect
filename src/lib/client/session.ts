@@ -1,31 +1,25 @@
 "use client";
 
-import type { Role } from "./types";
+import type { Profile, Role } from "./types";
 
 /**
- * The access token lives in localStorage (as before) so existing sessions survive the migration;
- * the refresh token is an httpOnly cookie the browser sends only to /api/auth/*.
+ * The signed-in user's app profile (role, phone, …), fetched once per page load and shared.
+ * The session itself is Neon Auth's httpOnly cookie; nothing auth-related is kept in localStorage.
+ * Resolves to null when signed out (or not allowed in, e.g. a disabled account).
  */
-const TOKEN_KEY = "accessToken";
-const ROLE_KEY = "role";
+let me: Promise<Profile | null> | null = null;
 
-const storage = () => (typeof window === "undefined" ? null : window.localStorage);
-
-export function getSession(): { accessToken: string; role: Role } | null {
-  const s = storage();
-  const accessToken = s?.getItem(TOKEN_KEY);
-  const role = s?.getItem(ROLE_KEY) as Role | null | undefined;
-  return accessToken && role ? { accessToken, role } : null;
+export function loadMe({ refresh = false }: { refresh?: boolean } = {}): Promise<Profile | null> {
+  if (!me || refresh) {
+    me = fetch("/api/auth/me", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      .then((res) => (res.ok ? (res.json() as Promise<Profile>) : null))
+      .catch(() => null);
+  }
+  return me;
 }
 
-export function setSession(accessToken: string, role: Role) {
-  storage()?.setItem(TOKEN_KEY, accessToken);
-  storage()?.setItem(ROLE_KEY, role);
-}
-
-export function clearSession() {
-  storage()?.removeItem(TOKEN_KEY);
-  storage()?.removeItem(ROLE_KEY);
+export function forgetMe() {
+  me = null;
 }
 
 export function homePathFor(role: Role): string {
@@ -37,4 +31,13 @@ export function homePathFor(role: Role): string {
     default:
       return "/stages";
   }
+}
+
+/** After a successful sign-in: load the profile and go to that role's home page. */
+export async function goHome(): Promise<boolean> {
+  const profile = await loadMe({ refresh: true });
+  if (!profile) return false;
+  // Full navigation so every page starts from the new session.
+  window.location.replace(homePathFor(profile.role));
+  return true;
 }
