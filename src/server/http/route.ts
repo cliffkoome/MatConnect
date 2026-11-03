@@ -3,8 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ZodError, type z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import type { Role } from "@/generated/prisma/enums";
-import { authenticate } from "@/server/auth/guard";
-import type { AccessClaims } from "@/server/auth/tokens";
+import { authenticate, type AuthUser } from "@/server/auth/guard";
 import { HttpError, badRequest } from "./errors";
 import { clientKeyFrom, rateLimiter, type RateLimitRule } from "./rate-limit";
 
@@ -25,7 +24,7 @@ export type RouteContext<P extends Params = Params> = {
   params: P;
   ip: string;
 };
-export type AuthedRouteContext<P extends Params = Params> = RouteContext<P> & { user: AccessClaims };
+export type AuthedRouteContext<P extends Params = Params> = RouteContext<P> & { user: AuthUser };
 
 type Options = { rateLimit?: RateLimitRule | readonly RateLimitRule[] };
 type AuthOptions = Options & { auth: Role | "any" };
@@ -53,8 +52,8 @@ export function route<P extends Params>(
 
       const params = ((await context?.params) ?? {}) as P;
       const user = options.auth
-        ? await authenticate(req.headers, options.auth === "any" ? undefined : options.auth)
-        : (null as unknown as AccessClaims);
+        ? await authenticate(options.auth === "any" ? undefined : options.auth)
+        : (null as unknown as AuthUser);
 
       const result = await handler({ req, params, ip, user });
       if (result instanceof Response) return result;

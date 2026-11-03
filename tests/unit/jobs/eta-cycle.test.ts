@@ -40,7 +40,6 @@ function setupWorld({ isAtStage = false, phone = "+254712345678" as string | nul
   ] as never);
   dbMock.stageSubscription.count.mockResolvedValue(1);
   dbMock.vehicle.updateMany.mockResolvedValue({ count: isAtStage ? 0 : 1 });
-  dbMock.revokedToken.deleteMany.mockResolvedValue({ count: 0 });
 }
 
 function deps(overrides: Partial<Parameters<typeof runEtaCycle>[0]> = {}) {
