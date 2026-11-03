@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { checkMigrations } from "./lib/migration-rules.mjs";
 
 const MIGRATIONS = "prisma/migrations";
-const baseRef = process.env.MIGRATIONS_BASE_REF;
+let baseRef = process.env.MIGRATIONS_BASE_REF;
 
 const directories = readdirSync(MIGRATIONS, { withFileTypes: true })
   .filter((d) => d.isDirectory())
@@ -31,8 +31,31 @@ const lockfile = existsSync(lockPath) ? readFileSync(lockPath, "utf8") : null;
 
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 
+/**
+ * The base must be a commit that shares history with HEAD. It isn't after a force-push (the old
+ * tip is gone) or on a branch's first push (`before` is all zeros); then the immutability and
+ * ordering checks are skipped with a warning instead of crashing. The structure and destructive-SQL
+ * checks below still run, and CI's drift check still applies the full history to a fresh database.
+ */
+function usableBase(ref) {
+  if (!ref || /^0+$/.test(ref)) return null;
+  try {
+    git("merge-base", ref, "HEAD");
+    return ref;
+  } catch {
+    return null;
+  }
+}
+
 let baseDirectories = [];
 let changedFiles = [];
+const requestedBase = baseRef;
+baseRef = usableBase(baseRef);
+if (requestedBase && !baseRef) {
+  console.warn(
+    `⚠️  Base ${requestedBase} isn't in this history (force-push or new branch): skipping the immutability and ordering checks.`,
+  );
+}
 if (baseRef) {
   try {
     baseDirectories = git("ls-tree", "-d", "--name-only", `${baseRef}:${MIGRATIONS}`)
