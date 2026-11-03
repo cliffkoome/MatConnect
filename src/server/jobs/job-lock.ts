@@ -23,9 +23,11 @@ export async function acquireJobLock(db: Db, name: string, ttlMs: number, holder
   if (acquired === 0) return null;
 
   return async function release() {
+    // Expire the lease in the past, not at "now": an immediate re-acquire in the same millisecond
+    // would otherwise see `locked_until < now` as false and be refused.
     const releasedAt = new Date();
     await db.$executeRaw`
-      UPDATE "job_locks" SET "locked_until" = ${releasedAt}, "updated_at" = ${releasedAt}
+      UPDATE "job_locks" SET "locked_until" = ${new Date(0)}, "updated_at" = ${releasedAt}
       WHERE "name" = ${name} AND "locked_by" = ${holder}`;
   };
 }
