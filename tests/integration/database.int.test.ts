@@ -145,6 +145,13 @@ describe("Neon Auth user linking", () => {
     expect(await db.user.count()).toBe(3);
   });
 
+  it("makes exactly one Admin when several people sign in to an empty database at once", async () => {
+    const people = Array.from({ length: 5 }, (_, i) => verified(`auth-race-${i}`, `person${i}@example.com`));
+    const users = await Promise.all(people.map(linkAuthUser));
+    expect(users.filter((u) => u.role === "Admin")).toHaveLength(1);
+    expect(await db.user.count()).toBe(5);
+  });
+
   it("enforces one app user per Neon Auth user", async () => {
     await db.user.create({ data: { name: "A", email: "a@example.com", authUserId: "auth-x" } });
     await expect(db.user.create({ data: { name: "B", email: "b@example.com", authUserId: "auth-x" } })).rejects.toThrow();
