@@ -1,6 +1,6 @@
 {
   "name": "matconnect",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "Real-time matatu arrival times from live GPS, SMS arrival alerts, and fleet dashboards for operators (Next.js, Neon Postgres, Neon Auth)",
