@@ -13,12 +13,15 @@ vi.mock("@/server/integrations/firebase", () => ({
 vi.mock("@/server/integrations/google-maps", () => ({ getDirections: vi.fn(), getLocationName: vi.fn() }));
 vi.mock("@/server/integrations/sms", () => ({ sendSms: vi.fn() }));
 
-const { runEtaCycle, countTripOnce, trackDistance } = await import("@/server/jobs/eta-cycle");
+const { runEtaCycle, countTripOnce, trackDistance, DEFAULT_BUDGET_MS } = await import("@/server/jobs/eta-cycle");
 
 const NOW = new Date("2026-10-19T09:00:00Z");
 const TODAY = new Date("2026-10-19T00:00:00Z");
 const stagePos = { latitude: -1.2833, longitude: 36.8167 };
 const near = { latitude: stagePos.latitude - 0.0002, longitude: stagePos.longitude }; // ~22 m away
+const SUBSCRIBED_AT = new Date("2026-10-19T08:00:00Z");
+/** ~111 m per 0.001° latitude. */
+const south = (metres: number) => ({ latitude: stagePos.latitude - metres / 111_195, longitude: stagePos.longitude });
 
 const leg = (metres: number): Directions => ({
   distance: { value: metres, text: `${metres} m` },
@@ -32,13 +35,13 @@ function setupWorld({ isAtStage = false, phone = "+254712345678" as string | nul
       name: "Kencom",
       ...stagePos,
       vehicles: [{ vehicle: { id: 10, carId: "CAR_10", plateNumber: "KDH 10", lastLatitude: null, lastLongitude: null } }],
-      subscribers: [{ userId: 4, user: { phoneNumber: phone } }],
+      subscribers: [{ userId: 4, createdAt: SUBSCRIBED_AT, user: { phoneNumber: phone } }],
     },
   ] as never);
   dbMock.vehicle.findMany.mockResolvedValue([
     { id: 10, carId: "CAR_10", isAtStage, lastLatitude: null, lastLongitude: null },
   ] as never);
-  dbMock.stageSubscription.count.mockResolvedValue(1);
+  dbMock.stageSubscription.deleteMany.mockResolvedValue({ count: 1 });
   dbMock.vehicle.updateMany.mockResolvedValue({ count: isAtStage ? 0 : 1 });
 }
 
@@ -51,6 +54,8 @@ function deps(overrides: Partial<Parameters<typeof runEtaCycle>[0]> = {}) {
     sendSms: vi.fn(async () => ({ status: "sent" as const, statusCode: 101, raw: {} })),
     now: () => NOW,
     useLock: false,
+    budgetMs: DEFAULT_BUDGET_MS,
+    timeZone: "Africa/Nairobi",
     ...overrides,
   };
 }
@@ -84,12 +89,32 @@ describe("runEtaCycle", () => {
     expect(dbMock.dailyTrip.upsert).not.toHaveBeenCalled();
   });
 
-  it("keeps the subscription when the SMS is not accepted", async () => {
+  it("puts the subscription back, with its original time, when the SMS is not accepted", async () => {
     setupWorld();
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const report = await runEtaCycle(deps({ sendSms: vi.fn(async () => ({ status: "failed" as const, raw: {} })) }));
     expect(report).toMatchObject({ smsSent: 0 });
-    expect(dbMock.stageSubscription.deleteMany).not.toHaveBeenCalled();
+    expect(dbMock.stageSubscription.createMany).toHaveBeenCalledWith({
+      data: [{ userId: 4, stageId: 1, createdAt: SUBSCRIBED_AT }],
+      skipDuplicates: true,
+    });
+  });
+
+  it("puts the subscription back when the SMS call throws", async () => {
+    setupWorld();
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await runEtaCycle(deps({ sendSms: vi.fn(async () => Promise.reject(new Error("timeout"))) }));
+    expect(dbMock.stageSubscription.createMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("only texts when it wins the claim, so an overlapping run can't send a duplicate", async () => {
+    setupWorld();
+    dbMock.stageSubscription.deleteMany.mockResolvedValue({ count: 0 }); // the other run claimed it first
+    const d = deps();
+    const report = await runEtaCycle(d);
+    expect(report).toMatchObject({ arrivals: 1, smsSent: 0 });
+    expect(d.sendSms).not.toHaveBeenCalled();
   });
 
   it("skips subscribers without a phone number", async () => {
@@ -101,7 +126,10 @@ describe("runEtaCycle", () => {
 
   it("resets isAtStage once the vehicle has left every stage, and hides 'Departed'/'Too Far' from passengers", async () => {
     setupWorld({ isAtStage: true });
-    const d = deps({ directions: vi.fn(async () => leg(900)) });
+    const d = deps({
+      fetchLocations: vi.fn(async () => new Map([["CAR_10", south(800)]])),
+      directions: vi.fn(async () => leg(900)),
+    });
 
     await runEtaCycle(d);
 
@@ -110,6 +138,41 @@ describe("runEtaCycle", () => {
     expect(d.publishEtas).toHaveBeenCalledWith("Kencom", {
       CAR_10: { plateNumber: "KDH 10", eta: "1 min", status: "Approaching" },
     });
+  });
+
+  it.each([
+    ["GPS dropout", new Map<string, VehicleLocation>()],
+    ["jitter just past the arrival radius", new Map([["CAR_10", south(80)]])],
+  ])("keeps isAtStage on %s, so the stop isn't counted twice", async (_, locations) => {
+    setupWorld({ isAtStage: true });
+    await runEtaCycle(deps({ fetchLocations: vi.fn(async () => locations) }));
+    expect(dbMock.vehicle.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: { isAtStage: false } }));
+  });
+
+  it("keeps isAtStage when the stage's ETA work fails", async () => {
+    setupWorld({ isAtStage: true });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await runEtaCycle(deps({ publishEtas: vi.fn(async () => Promise.reject(new Error("firebase down"))) }));
+    expect(dbMock.vehicle.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: { isAtStage: false } }));
+  });
+
+  it("counts the trip on the Nairobi calendar day", async () => {
+    setupWorld();
+    await runEtaCycle(deps({ now: () => new Date("2026-10-19T22:00:00Z") })); // 01:00 on 20 Oct in Nairobi
+    expect(dbMock.dailyTrip.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { vehicleId_date: { vehicleId: 10, date: new Date("2026-10-20T00:00:00Z") } } }),
+    );
+  });
+
+  it("stops starting new work when the time budget is spent, and says so", async () => {
+    setupWorld();
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    let t = NOW.getTime();
+    const report = await runEtaCycle(
+      deps({ budgetMs: 1_000, now: () => new Date((t += 2_000)) }), // every clock read is 2 s later
+    );
+    expect(report).toMatchObject({ skipped: false, truncated: true, arrivals: 0 });
+    expect(dbMock.vehicle.update).not.toHaveBeenCalled();
   });
 
   it("isolates a failing stage and keeps going", async () => {

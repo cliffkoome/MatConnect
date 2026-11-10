@@ -34,6 +34,16 @@ describe("linkAuthUser", () => {
     });
   });
 
+  it("takes the provisioning lock before counting users, so only one first user can become Admin", async () => {
+    dbMock.user.findUnique.mockResolvedValue(null);
+    dbMock.user.count.mockResolvedValue(0);
+    dbMock.user.create.mockImplementation((async ({ data }: { data: object }) => userRow({ ...data })) as never);
+    await auth.linkAuthUser(identity());
+    const lockedAt = dbMock.$executeRaw.mock.invocationCallOrder[0]!;
+    expect(lockedAt).toBeLessThan(dbMock.user.count.mock.invocationCallOrder[0]!);
+    expect((dbMock.$executeRaw.mock.calls[0]![0] as TemplateStringsArray).join("")).toContain("pg_advisory_xact_lock");
+  });
+
   it("makes everyone else a Passenger", async () => {
     dbMock.user.findUnique.mockResolvedValue(null);
     dbMock.user.count.mockResolvedValue(4);

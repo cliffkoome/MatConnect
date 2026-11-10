@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  ARRIVAL_RADIUS_M,
+  DEPARTURE_RADIUS_M,
   GEOFENCE_RADIUS_M,
   computeVehicleEta,
-  mergeVehicleStatus,
+  hasLeftAllStages,
   type Directions,
   type EtaVehicle,
-  type VehicleStatus,
 } from "@/server/domain/eta";
 
 const stage = { latitude: -1.2833, longitude: 36.8167 };
@@ -47,9 +48,22 @@ describe("computeVehicleEta", () => {
     expect(eta).toMatchObject({ status: "No Route", eta: "N/A" });
   });
 
-  it("is Arrived within 50 m of route distance", async () => {
-    const eta = await computeVehicleEta(vehicle(), south(30), stage, async () => leg(30));
+  it("is Arrived within 50 m in a straight line, without asking Google", async () => {
+    const directions = vi.fn();
+    const eta = await computeVehicleEta(vehicle(), south(30), stage, directions);
     expect(eta).toMatchObject({ status: "Arrived", eta: "Arrived" });
+    expect(directions).not.toHaveBeenCalled();
+  });
+
+  it("detects arrival even when Maps is down", async () => {
+    const eta = await computeVehicleEta(vehicle(), south(ARRIVAL_RADIUS_M - 5), stage, async () => null);
+    expect(eta.status).toBe("Arrived");
+  });
+
+  it("does not trust a cached route distance for arrival", async () => {
+    // Directions are cached on a ~110 m grid: a stale 20 m leg must not mark a vehicle 90 m out as arrived.
+    const eta = await computeVehicleEta(vehicle(), south(90), stage, async () => leg(20));
+    expect(eta.status).toBe("Approaching");
   });
 
   it("is Approaching with the traffic-aware duration when available", async () => {
@@ -97,14 +111,20 @@ describe("computeVehicleEta", () => {
   });
 });
 
-describe("mergeVehicleStatus", () => {
-  it("keeps the first status unless a later stage reports Arrived", () => {
-    const statuses = new Map<number, VehicleStatus>();
-    mergeVehicleStatus(statuses, 1, "Approaching");
-    mergeVehicleStatus(statuses, 1, "Departed");
-    expect(statuses.get(1)).toBe("Approaching");
-    mergeVehicleStatus(statuses, 1, "Arrived");
-    mergeVehicleStatus(statuses, 1, "Too Far");
-    expect(statuses.get(1)).toBe("Arrived");
+describe("hasLeftAllStages", () => {
+  const other = { latitude: stage.latitude + 0.05, longitude: stage.longitude };
+
+  it("needs a GPS fix: a dropout is not evidence of leaving", () => {
+    expect(hasLeftAllStages(undefined, [stage])).toBe(false);
+  });
+
+  it("uses a wider radius than arrival, so jitter at the edge doesn't count as leaving", () => {
+    expect(hasLeftAllStages(south(ARRIVAL_RADIUS_M + 20), [stage])).toBe(false);
+    expect(hasLeftAllStages(south(DEPARTURE_RADIUS_M + 20), [stage])).toBe(true);
+  });
+
+  it("is false while the vehicle is still at any stage it serves", () => {
+    expect(hasLeftAllStages(south(10), [other, stage])).toBe(false);
+    expect(hasLeftAllStages(south(1_000), [other, stage])).toBe(true);
   });
 });

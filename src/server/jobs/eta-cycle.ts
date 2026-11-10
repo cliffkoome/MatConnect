@@ -1,9 +1,9 @@
 import "server-only";
 import { db as defaultDb, type Db } from "@/server/db";
-import { mergeVehicleStatus, type VehicleStatus } from "@/server/domain/eta";
-import { MOVEMENT_THRESHOLD_M } from "@/server/domain/eta";
+import { MOVEMENT_THRESHOLD_M, hasLeftAllStages } from "@/server/domain/eta";
 import { haversineDistance, type LatLng } from "@/server/domain/geo";
-import { startOfUtcDay } from "@/server/domain/periods";
+import { businessDay } from "@/server/domain/periods";
+import { env } from "@/server/env";
 import {
   fetchVehicleLocations,
   primeVehicleLocations,
@@ -25,12 +25,20 @@ import { acquireJobLock } from "./job-lock";
  *  1. read every vehicle's GPS fix from Firebase (one call)
  *  2. compute ETAs per stage and publish them to Firebase `etas/<stage>`
  *  3. on arrival: count a trip (once per stay) and SMS one-shot subscribers
- *  4. clear `isAtStage` for vehicles that are no longer at any stage
+ *  4. clear `isAtStage` for vehicles that have clearly left every stage they serve
  *  5. accumulate daily distance and remember the last position
+ *
+ * The run must finish inside its lease, or a second instance could take the lease over and run
+ * alongside it. So it works to a time budget shorter than the lease and stops starting new work
+ * once the budget is spent. Stopping early is safe: unpublished ETAs are refreshed by the next run,
+ * and distance is measured from the last *saved* position, so skipped movement is counted next time.
  */
 
 export const ETA_LOCK_NAME = "eta-cycle";
-const LOCK_TTL_MS = 55_000;
+export const LOCK_TTL_MS = 55_000;
+/** Time left in the lease when a run stops starting new work (one stage or DB write fits easily). */
+const LEASE_SAFETY_MARGIN_MS = 10_000;
+export const DEFAULT_BUDGET_MS = LOCK_TTL_MS - LEASE_SAFETY_MARGIN_MS;
 
 export type EtaCycleDeps = {
   db: Db;
@@ -40,6 +48,10 @@ export type EtaCycleDeps = {
   sendSms: (to: string, message: string) => Promise<SmsResult>;
   now: () => Date;
   useLock: boolean;
+  /** Wall-clock time the run may use; never more than DEFAULT_BUDGET_MS (see the file comment). */
+  budgetMs: number;
+  /** IANA zone whose calendar day trips and distance are counted under. */
+  timeZone: string;
 };
 
 export type EtaCycleReport =
@@ -52,6 +64,8 @@ export type EtaCycleReport =
       tripsCounted: number;
       smsSent: number;
       errors: number;
+      /** True if the time budget ran out and some stages or vehicles were left for the next run. */
+      truncated: boolean;
       durationMs: number;
     };
 
@@ -63,6 +77,8 @@ const defaultDeps = (): EtaCycleDeps => ({
   sendSms: defaultSendSms,
   now: () => new Date(),
   useLock: true,
+  budgetMs: DEFAULT_BUDGET_MS,
+  timeZone: env().APP_TIME_ZONE,
 });
 
 let runningInProcess = false;
@@ -86,8 +102,18 @@ export async function runEtaCycle(overrides: Partial<EtaCycleDeps> = {}): Promis
 
 async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
   const { db } = deps;
-  const startedAt = Date.now();
-  const report = { stages: 0, vehiclesOnline: 0, arrivals: 0, tripsCounted: 0, smsSent: 0, errors: 0 };
+  const startedAt = deps.now().getTime();
+  const deadline = startedAt + Math.min(deps.budgetMs, DEFAULT_BUDGET_MS);
+  const outOfTime = () => deps.now().getTime() >= deadline;
+  const report = {
+    stages: 0,
+    vehiclesOnline: 0,
+    arrivals: 0,
+    tripsCounted: 0,
+    smsSent: 0,
+    errors: 0,
+    truncated: false,
+  };
 
   // --- 1. Read phase ---------------------------------------------------------------------------
   const [stages, vehicles, locations] = await Promise.all([
@@ -103,7 +129,7 @@ async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
             vehicle: { select: { id: true, carId: true, plateNumber: true, lastLatitude: true, lastLongitude: true } },
           },
         },
-        subscribers: { select: { userId: true, user: { select: { phoneNumber: true } } } },
+        subscribers: { select: { userId: true, createdAt: true, user: { select: { phoneNumber: true } } } },
       },
     }),
     db.vehicle.findMany({
@@ -116,11 +142,14 @@ async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
   report.stages = stages.length;
   report.vehiclesOnline = vehicles.filter((v) => locations.has(v.carId)).length;
 
-  const finalStatus = new Map<number, VehicleStatus>();
-  const today = startOfUtcDay(deps.now());
+  const today = businessDay(deps.now(), deps.timeZone);
 
   // --- 2. Calculation + arrival phase ----------------------------------------------------------
   for (const stage of stages) {
+    if (outOfTime()) {
+      report.truncated = true;
+      break;
+    }
     try {
       const etas = await calculateEtasForStage(
         stage,
@@ -128,8 +157,6 @@ async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
         locations,
         deps.directions,
       );
-      for (const eta of etas) mergeVehicleStatus(finalStatus, eta.id, eta.status);
-
       const payload: StageEtaPayload = Object.fromEntries(
         visibleArrivals(etas).map((e) => [e.carId, { plateNumber: e.plateNumber, eta: e.eta, status: e.status }]),
       );
@@ -147,7 +174,19 @@ async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
   }
 
   // --- 3. Reset vehicles that have left every stage --------------------------------------------
-  const leftStage = vehicles.filter((v) => v.isAtStage && finalStatus.get(v.id) !== "Arrived").map((v) => v.id);
+  // Decided from geometry, not from this run's statuses: a stage that errored, a "No Route" from
+  // Maps or a GPS dropout must not look like the vehicle drove off (it would be counted again).
+  const stagesByVehicle = new Map<number, LatLng[]>();
+  for (const stage of stages) {
+    for (const { vehicle } of stage.vehicles) {
+      const served = stagesByVehicle.get(vehicle.id) ?? [];
+      served.push({ latitude: stage.latitude, longitude: stage.longitude });
+      stagesByVehicle.set(vehicle.id, served);
+    }
+  }
+  const leftStage = vehicles
+    .filter((v) => v.isAtStage && hasLeftAllStages(locations.get(v.carId), stagesByVehicle.get(v.id) ?? []))
+    .map((v) => v.id);
   if (leftStage.length) {
     await db.vehicle.updateMany({ where: { id: { in: leftStage } }, data: { isAtStage: false } });
   }
@@ -156,6 +195,10 @@ async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
   for (const vehicle of vehicles) {
     const location = locations.get(vehicle.carId);
     if (!location) continue;
+    if (outOfTime()) {
+      report.truncated = true;
+      break;
+    }
     try {
       await trackDistance(db, vehicle, location, today);
     } catch (error) {
@@ -164,7 +207,8 @@ async function cycle(deps: EtaCycleDeps): Promise<EtaCycleReport> {
     }
   }
 
-  return { skipped: false, ...report, durationMs: Date.now() - startedAt };
+  if (report.truncated) console.warn("[eta-cycle] time budget spent; the rest is left for the next run");
+  return { skipped: false, ...report, durationMs: deps.now().getTime() - startedAt };
 }
 
 /**
@@ -190,33 +234,46 @@ export async function countTripOnce(db: Db, vehicleId: number, date: Date): Prom
 type StageWithSubscribers = {
   id: number;
   name: string;
-  subscribers: { userId: number; user: { phoneNumber: string | null } }[];
+  subscribers: { userId: number; createdAt: Date; user: { phoneNumber: string | null } }[];
 };
 
-/** One-shot alerts: a subscriber is removed only after Africa's Talking accepts the SMS. */
+/**
+ * One-shot alerts, claim-then-send: deleting the subscription row *is* the claim, and only the
+ * caller whose delete removed it sends. Two overlapping runs, or two vehicles arriving in the same
+ * run, can therefore never text the same person twice. If the SMS isn't accepted the row is put
+ * back (with its original created_at), so the next arrival retries it.
+ *
+ * The one gap is a crash between the claim and the send, which loses that alert. A duplicate
+ * "your matatu is here" text is worse for the passenger than a rare missed one, and the old
+ * send-then-delete order had the opposite gap plus duplicates under overlap.
+ */
 async function notifySubscribers(deps: EtaCycleDeps, stage: StageWithSubscribers, plateNumber: string) {
   let sent = 0;
   const pending = stage.subscribers.filter((s) => s.user.phoneNumber);
   const results = await Promise.allSettled(
     pending.map(async (subscriber) => {
-      // Re-check: an earlier arrival in this same cycle may already have consumed the subscription.
-      const stillSubscribed = await deps.db.stageSubscription.count({
-        where: { userId: subscriber.userId, stageId: stage.id },
-      });
-      if (!stillSubscribed) return;
-      const result = await deps.sendSms(
-        subscriber.user.phoneNumber!,
-        `Matatu ${plateNumber} has arrived at ${stage.name}.`,
-      );
+      const key = { userId: subscriber.userId, stageId: stage.id };
+      const { count: claimed } = await deps.db.stageSubscription.deleteMany({ where: key });
+      if (claimed === 0) return; // already alerted, or they unsubscribed
+
+      const result = await deps
+        .sendSms(subscriber.user.phoneNumber!, `Matatu ${plateNumber} has arrived at ${stage.name}.`)
+        .catch((error: unknown) => {
+          console.error(`[eta-cycle] SMS to user ${subscriber.userId} threw`, error);
+          return { status: "failed" as const, raw: null };
+        });
       if (result.status === "sent") {
-        await deps.db.stageSubscription.deleteMany({ where: { userId: subscriber.userId, stageId: stage.id } });
         sent += 1;
-      } else {
-        console.warn(`[eta-cycle] SMS to user ${subscriber.userId} ${result.status}; keeping subscription.`);
+        return;
       }
+      console.warn(`[eta-cycle] SMS to user ${subscriber.userId} ${result.status}; restoring subscription.`);
+      await deps.db.stageSubscription.createMany({
+        data: [{ ...key, createdAt: subscriber.createdAt }],
+        skipDuplicates: true,
+      });
     }),
   );
-  for (const r of results) if (r.status === "rejected") console.error("[eta-cycle] SMS failed", r.reason);
+  for (const r of results) if (r.status === "rejected") console.error("[eta-cycle] alert bookkeeping failed", r.reason);
   return sent;
 }
 

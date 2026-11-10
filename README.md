@@ -17,8 +17,12 @@ rider feedback.
 
 ## Contents
 
+- [Problem and constraints](#problem-and-constraints)
 - [Features](#features)
 - [How it works](#how-it-works)
+- [Design decisions and trade-offs](#design-decisions-and-trade-offs)
+- [Failure modes](#failure-modes)
+- [Scaling](#scaling)
 - [Tech stack](#tech-stack)
 - [Getting started](#getting-started)
 - [Configuration](#configuration)
@@ -27,10 +31,27 @@ rider feedback.
 - [Security](#security)
 - [Testing & CI/CD](#testing--cicd)
 - [API](#api)
+- [Limitations and roadmap](#limitations-and-roadmap)
 - [Project layout](#project-layout)
 - [Contributing](#contributing)
 
 ---
+
+## Problem and constraints
+
+Matatus don't run to a timetable. Passengers wait at a stage without knowing whether the next vehicle
+is two minutes or twenty away, and owners have no reliable record of how far each vehicle went or how
+many trips it made. The design follows from a few constraints:
+
+- **The devices are fixed.** GPS units already push positions to Firebase Realtime Database. There is
+  no ingestion API to design and no firmware to change.
+- **Counts must be right.** Trips and distance feed owners' reports, and a passenger alert should arrive
+  once. Every write that counts something has to be safe against retries, overlapping runs and partial
+  failures.
+- **No dedicated infrastructure.** One Next.js app and a Neon Postgres project, deployable on a single
+  VM or on serverless functions, with no queue, Redis or worker fleet required.
+- **Third-party APIs fail and cost money.** Google Directions is paid per call and SMS is paid per
+  message, so both are called as little as possible and neither is allowed to corrupt the counts.
 
 ## Features
 
@@ -64,13 +85,15 @@ flowchart LR
 **ETA cycle.** Every 30 seconds the app reads the latest GPS fix for every vehicle from Firebase and,
 for each stage, classifies the vehicles on its route:
 
-- outside a 5 km geofence → *Too Far*;
-- inside it → *Approaching*, with an ETA from Google Directions;
-- within 50 m → *Arrived*, then *Departed* once it leaves.
+- outside a 5 km geofence → *Too Far* (no Maps call);
+- within 50 m in a straight line → *Arrived* (no Maps call);
+- otherwise *Approaching*, with a traffic-aware ETA from Google Directions, or *Departed* if its heading
+  points away from the stage.
 
-Results are published to Firebase `etas/<stage>`. The cycle also counts one trip per arrival, adds up
-each vehicle's daily distance and texts subscribed passengers. A lease row in `job_locks` makes sure
-only one cycle runs at a time, however many app instances or cron calls there are.
+Results are published to Firebase `etas/<stage>`. On each arrival the cycle counts one trip and texts
+subscribed passengers. It also adds up each vehicle's daily distance. A lease row in `job_locks` makes
+sure only one cycle runs at a time, however many app instances or cron calls there are. Each run works
+to a time budget that ends before its lease does.
 
 **Request path.** Every API route goes through one `route()` wrapper. It applies the per-IP rate limit,
 checks the Neon Auth session, and loads the caller's `users` row; role and blocked flag are read fresh
@@ -86,6 +109,49 @@ own `users` table holds the role, phone number and blocked flag, linked by `auth
 - the first verified sign-in on a new database becomes the **Admin**;
 - someone an Admin added by email gets that **role** when they sign up with that email;
 - everyone else is a **Passenger**.
+
+## Design decisions and trade-offs
+
+Each decision has a record in [docs/adr](docs/adr) with the options that were considered.
+
+| Decision | Why | Cost |
+| --- | --- | --- |
+| [Two stores](docs/adr/0001-two-stores.md): Firebase for live positions, Postgres for everything counted or owned | Devices already write to Firebase; constraints and transactions belong in Postgres | Two failure domains; the ETA cycle is the only bridge between them |
+| [One leased job](docs/adr/0002-eta-cycle-as-a-leased-job.md) with interchangeable triggers (timer, cron endpoint, worker) | Runs anywhere, with no queue; a lease row works through Neon's pooler where session advisory locks don't | No fencing token, so every side effect is also guarded on its own |
+| [Arrival from GPS, leaving with hysteresis](docs/adr/0003-arrival-and-trip-counting.md) (arrive ≤ 50 m, leave > 150 m from every stage served) | Cached Maps routes are coarser than the arrival radius; dropouts and errors must not look like leaving | A vehicle on the far side of a dual carriageway can count as arrived |
+| [Claim-then-send alerts](docs/adr/0004-claim-then-send-alerts.md) | Deleting the subscription is an atomic claim, so overlapping runs can't text twice | A crash between the claim and the send loses that one alert |
+| [Neon Auth for identity, app-owned roles](docs/adr/0005-identity-and-roles.md) | No credential storage; role and block are read on every request, so they take effect immediately | One primary-key lookup per request |
+| [Local business day](docs/adr/0006-business-day.md) | Trips after midnight in Nairobi belong to the new day, not the UTC one | One zone per deployment |
+
+## Failure modes
+
+| Failure | What happens | Why counts stay correct |
+| --- | --- | --- |
+| Two app instances, or a cron call plus the in-process timer | The second run finds the lease taken and skips | `job_locks` lease; each run ends before its lease expires |
+| A run is slow (Maps timeouts) | It stops starting new stages when its budget is spent and reports `truncated: true` | Unpublished ETAs refresh next run; distance is measured from the last saved position, so nothing is lost |
+| Serverless function near `maxDuration` | The cron endpoint caps each run's budget by the time left, and skips the second run if too little remains | The run finishes and releases its lease, so the next minute's run isn't blocked |
+| Google Maps down or key missing | ETAs show *No Route* | Arrival and trips don't use Maps |
+| GPS dropout while a vehicle waits at a stage | Vehicle shows *Offline* | Leaving needs a fix more than 150 m away, so the stop isn't counted twice |
+| SMS rejected or the call throws | Logged | The subscription is restored and retried on the next arrival |
+| Two vehicles arrive at one stage in the same run | One text per subscriber | Only the run that deletes the subscription row sends |
+| Firebase write fails for one stage | That stage is skipped and counted in `errors` | Stages are isolated; other stages and the distance phase still run |
+| Two people sign in to a brand-new deployment at once | Exactly one becomes Admin | Provisioning takes a transaction-scoped advisory lock before counting users |
+| Postgres unreachable | API calls fail; `/api/health` returns `503 degraded` for monitoring | Trip and distance updates run in transactions, so nothing is half-written |
+
+## Scaling
+
+Today the bottleneck is the ETA cycle, not the web tier. Web instances are stateless apart from
+rate-limit counters. The cycle is one job processing stages in sequence, and the 45-second budget
+means the slowest stages decide how many stages fit in one run.
+
+| Pressure | What changes |
+| --- | --- |
+| More stages than one run can finish | Shard the lease (`eta-cycle:<shard>`) by stage group so several workers share the work; process stages with bounded concurrency inside a run |
+| Maps cost | Replace one Directions call per vehicle with one Distance Matrix call per stage (up to 25 origins); the geofence and GPS-based arrival already skip most calls |
+| Fleet size | Reading the whole `locations` node every 30 s is O(fleet); switch to child listeners in a long-running worker, or have devices write a timestamped fix and read only recent ones |
+| Passenger reads | `/api/eta/:stage` recomputes from cached positions and routes; serve the cycle's published snapshot instead so reads never touch Maps |
+| Global rate limits behind a load balancer | Back `RateLimiter` (`src/server/http/rate-limit.ts`) with Redis |
+| Alerts beyond one message type | Move from claim-then-send to an outbox table with a sender and retries |
 
 ## Tech stack
 
@@ -148,6 +214,7 @@ All configuration is through environment variables, validated at startup by `src
 | `NEON_AUTH_BASE_URL` | ✅ | Neon Auth URL of the branch (written by the Neon CLI) |
 | `NEON_AUTH_COOKIE_SECRET` | ✅ | 32+ characters; signs the cached session cookie. Use a different value per environment |
 | `APP_URL` | production | Public origin of the app, e.g. `https://matconnect.example.com` |
+| `APP_TIME_ZONE` | no | IANA zone that decides which day a trip counts under (default `Africa/Nairobi`) |
 | `FIREBASE_CREDENTIALS_BASE64` | for live ETAs | Base64 service-account JSON (`base64 -w0 key.json`) |
 | `FIREBASE_DATABASE_URL` | for live ETAs | Realtime Database URL |
 | `GOOGLE_MAPS_API_KEY` | for ETAs | Directions API key |
@@ -204,9 +271,9 @@ Vercel Hobby only allows daily crons and rejects this file at deploy time.
   copy of the database and Neon Auth. `neon.ts` gives new branches a 7-day expiry.
 - **Logs:** server logs are prefixed by subsystem (`[eta-cycle]`, `[firebase]`, `[sms]`, `[auth]`,
   `[api]`). An integration that isn't configured logs once and switches itself off instead of failing.
-- **Scaling:** app instances are stateless apart from rate-limit counters, which are kept per instance.
-  For global limits behind a load balancer, back `RateLimiter` (`src/server/http/rate-limit.ts`) with a
-  shared store such as Redis. The ETA cycle is already safe across instances.
+- **ETA cycle reports:** every run returns `{ stages, vehiclesOnline, arrivals, tripsCounted, smsSent,
+  errors, truncated, durationMs }`, which the cron endpoint returns as JSON. Alert on `errors > 0` or
+  `truncated: true` repeating across runs.
 
 ## Security
 
@@ -265,6 +332,19 @@ for every endpoint (VS Code REST Client).
 
 Page URLs from the first version (`*.html`) permanently redirect to their new routes.
 
+## Limitations and roadmap
+
+- **Stale positions.** Fixes in Firebase carry no timestamp, so a device that stops reporting leaves its
+  last position in place and the vehicle keeps an ETA. The fix is a firmware change to write
+  `updatedAt` with each fix; the cycle would then mark older fixes *Offline*.
+- **Two ETA paths.** The cycle publishes ETAs to Firebase, while `/api/eta/:stage` computes its own from
+  the same cached inputs. Serving the published snapshot would make the cycle the only writer.
+- **Firebase keys use stage names.** Renaming a stage leaves the old `etas/<name>` node behind. Keying by
+  stage ID is a breaking change for anything that reads Firebase directly, so it waits for a versioned
+  path (`etas/v2/<id>`).
+- **Historical days.** Trips recorded before the move to local days stay on their UTC day (see
+  [ADR-0006](docs/adr/0006-business-day.md)).
+
 ## Project layout
 
 ```
@@ -285,6 +365,7 @@ src/
 prisma/                    schema, migrations, seed
 tests/                     unit/, api/, integration/
 scripts/                   migration checker, standalone ETA worker
+docs/adr/                  architecture decision records
 docs/MIGRATIONS.md         database change rules
 neon.ts                    Neon project policy (services, branch expiry)
 ```

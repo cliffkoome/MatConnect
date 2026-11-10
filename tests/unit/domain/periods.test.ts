@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   addUtcDays,
   bucketByPeriod,
+  businessDay,
+  isValidTimeZone,
   isoWeekKey,
   metresToKm,
   monthKey,
@@ -96,5 +98,23 @@ describe("metresToKm", () => {
   it("rounds to 2 decimals", () => {
     expect(metresToKm(12_345.678)).toBe(12.35);
     expect(metresToKm(0)).toBe(0);
+  });
+});
+
+describe("businessDay", () => {
+  it("keys a trip by the Nairobi calendar day, not the UTC one", () => {
+    // 00:30 in Nairobi on 20 Oct is still 19 Oct in UTC.
+    expect(businessDay(d("2026-10-19T21:30:00Z"))).toEqual(d("2026-10-20T00:00:00Z"));
+    expect(businessDay(d("2026-10-19T20:59:59Z"))).toEqual(d("2026-10-19T00:00:00Z"));
+  });
+
+  it("honours another zone", () => {
+    expect(businessDay(d("2026-10-19T21:30:00Z"), "UTC")).toEqual(d("2026-10-19T00:00:00Z"));
+    expect(businessDay(d("2026-10-19T03:00:00Z"), "America/New_York")).toEqual(d("2026-10-18T00:00:00Z"));
+  });
+
+  it("validates zone names", () => {
+    expect(isValidTimeZone("Africa/Nairobi")).toBe(true);
+    expect(isValidTimeZone("Mars/Olympus")).toBe(false);
   });
 });
