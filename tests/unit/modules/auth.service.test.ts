@@ -39,9 +39,9 @@ describe("linkAuthUser", () => {
     dbMock.user.count.mockResolvedValue(0);
     dbMock.user.create.mockImplementation((async ({ data }: { data: object }) => userRow({ ...data })) as never);
     await auth.linkAuthUser(identity());
-    const lockedAt = dbMock.$queryRaw.mock.invocationCallOrder[0]!;
+    const lockedAt = dbMock.$executeRaw.mock.invocationCallOrder[0]!;
     expect(lockedAt).toBeLessThan(dbMock.user.count.mock.invocationCallOrder[0]!);
-    expect((dbMock.$queryRaw.mock.calls[0]![0] as TemplateStringsArray).join("")).toContain("pg_advisory_xact_lock");
+    expect((dbMock.$executeRaw.mock.calls[0]![0] as TemplateStringsArray).join("")).toContain("pg_advisory_xact_lock");
   });
 
   it("makes everyone else a Passenger", async () => {

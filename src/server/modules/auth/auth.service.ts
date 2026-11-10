@@ -54,7 +54,8 @@ export async function linkAuthUser(identity: AuthIdentity): Promise<User> {
       // people signing in to an empty database at the same moment both see count() = 0 under READ
       // COMMITTED and both become Admin. The lock is transaction-scoped, so it works through Neon's
       // pooler, and it is only taken on this path (a person's first sign-in), so contention is nil.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(${USER_PROVISIONING_LOCK})`;
+      // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot decode as a row.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${USER_PROVISIONING_LOCK}::bigint)`;
       const role = (await tx.user.count()) === 0 ? Role.Admin : Role.Passenger;
       const user = await tx.user.create({
         data: { authUserId: identity.id, email, name: identity.name || email, profilePictureUrl: identity.image, role },
