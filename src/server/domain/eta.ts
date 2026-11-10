@@ -2,8 +2,14 @@ import { bearingDifference, calculateBearing, haversineDistance, type LatLng } f
 
 /** Only ask Google for directions when the vehicle is within this straight-line distance. */
 export const GEOFENCE_RADIUS_M = 5_000;
-/** Route distance below which a vehicle counts as "Arrived". */
+/** Straight-line distance at or below which a vehicle counts as "Arrived". */
 export const ARRIVAL_RADIUS_M = 50;
+/**
+ * Straight-line distance a vehicle must exceed before it counts as having left a stage. Larger than
+ * ARRIVAL_RADIUS_M on purpose (hysteresis): GPS jitter around the 50 m line must not look like
+ * leave-and-return, or one stop would be counted as several trips.
+ */
+export const DEPARTURE_RADIUS_M = 150;
 /** Movement below this is treated as GPS drift. */
 export const MOVEMENT_THRESHOLD_M = 10;
 /** Heading this far away from the stage means the vehicle has already left it. */
@@ -37,8 +43,13 @@ export type EtaVehicle = {
 };
 
 /**
- * Pure classification step of the ETA calculation (same rules as the original
- * etaCalculationService, minus the I/O). `getDirections` is only called inside the geofence.
+ * Pure classification step of the ETA calculation. `getDirections` is only called for vehicles
+ * that are inside the geofence but not yet at the stage.
+ *
+ * Arrival is decided from the GPS fix alone, never from Google: directions are cached on a ~110 m
+ * grid for minutes, which is far coarser than the 50 m arrival radius, and a Maps outage must not
+ * stop trips being counted. (Road distance is never shorter than straight-line distance, so this
+ * can only detect arrival earlier than the old route-distance rule, never miss one.)
  */
 export async function computeVehicleEta(
   vehicle: EtaVehicle,
@@ -50,17 +61,17 @@ export async function computeVehicleEta(
 
   if (!current) return { ...base, eta: "N/A", status: "Offline" };
 
-  if (haversineDistance(current, stage) > GEOFENCE_RADIUS_M) {
+  const straightLine = haversineDistance(current, stage);
+  if (straightLine > GEOFENCE_RADIUS_M) {
     return { ...base, eta: "N/A", status: "Too Far" };
+  }
+  if (straightLine <= ARRIVAL_RADIUS_M) {
+    return { ...base, eta: "Arrived", status: "Arrived" };
   }
 
   const directions = await getDirections(current, stage);
   if (!directions?.distance || !directions.duration) {
     return { ...base, eta: "N/A", status: "No Route" };
-  }
-
-  if (directions.distance.value < ARRIVAL_RADIUS_M) {
-    return { ...base, eta: "Arrived", status: "Arrived" };
   }
 
   const previous =
@@ -81,13 +92,11 @@ export async function computeVehicleEta(
 }
 
 /**
- * A vehicle can serve several stages. Its status for the cycle is "Arrived" if it arrived at any
- * of them, otherwise the first status seen.
+ * True only with positive evidence that the vehicle is away from every stage it serves: it has a
+ * fix, and that fix is beyond DEPARTURE_RADIUS_M of each of them. A missing fix (GPS dropout) or a
+ * failed lookup is *not* evidence of leaving, so it can't cause a second trip to be counted.
  */
-export function mergeVehicleStatus(
-  statuses: Map<number, VehicleStatus>,
-  vehicleId: number,
-  status: VehicleStatus,
-): void {
-  if (status === "Arrived" || !statuses.has(vehicleId)) statuses.set(vehicleId, status);
+export function hasLeftAllStages(current: LatLng | undefined, stages: readonly LatLng[]): boolean {
+  if (!current) return false;
+  return stages.every((stage) => haversineDistance(current, stage) > DEPARTURE_RADIUS_M);
 }
