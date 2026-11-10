@@ -2,8 +2,41 @@
  * Date bucketing for the Matatu-admin charts and reports.
  *
  * The Express version leaned on MySQL's YEARWEEK()/DATE_FORMAT(); doing it here keeps the queries
- * portable and lets us unit-test the maths. Everything is UTC, matching how daily rows are keyed.
+ * portable and lets us unit-test the maths.
+ *
+ * Daily rows are keyed by the operator's *local* calendar day (see `businessDay`), stored as
+ * midnight UTC of that date because that is how a Postgres DATE column round-trips. Once a value
+ * is a business day, all the helpers below treat it as a plain calendar date in UTC.
  */
+
+/** Matatu operations run on Kenyan time (UTC+3, no daylight saving). */
+export const DEFAULT_TIME_ZONE = "Africa/Nairobi";
+
+/**
+ * The calendar day `date` falls on in `timeZone`, as midnight UTC of that date.
+ *
+ * Bucketing by the UTC day put every trip between midnight and 03:00 in Nairobi on the previous
+ * day, and showed operators yesterday's totals as "today" until 03:00.
+ */
+export function businessDay(date: Date, timeZone: string = DEFAULT_TIME_ZONE): Date {
+  const key = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+  return new Date(`${key}T00:00:00.000Z`);
+}
+
+/** True if `timeZone` is an IANA zone this runtime understands. */
+export function isValidTimeZone(timeZone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export type Period = "daily" | "weekly" | "monthly";
 export const PERIODS: readonly Period[] = ["daily", "weekly", "monthly"];

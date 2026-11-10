@@ -12,6 +12,18 @@ const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
 beforeEach(() => resetDbMock());
 
+describe("dashboardSummary", () => {
+  it("reports 'today' by the Nairobi day, so just after local midnight it is already the new day", async () => {
+    dbMock.vehicle.findMany.mockResolvedValue([{ id: 1 }] as never);
+    dbMock.dailyDistance.aggregate.mockResolvedValue({ _sum: { distanceCovered: 0 } } as never);
+    dbMock.dailyTrip.aggregate.mockResolvedValue({ _sum: { tripCount: 0 } } as never);
+
+    await mat.dashboardSummary(3, new Date("2026-10-19T21:30:00Z")); // 00:30 on 20 Oct in Nairobi
+
+    expect(dbMock.dailyTrip.aggregate.mock.calls[0]![0]!.where).toMatchObject({ date: day("2026-10-20") });
+  });
+});
+
 describe("vehicleChartData", () => {
   it("404s for vehicles the Matatu admin doesn't own", async () => {
     dbMock.vehicle.findFirst.mockResolvedValue(null);

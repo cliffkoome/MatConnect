@@ -4,11 +4,12 @@ import { db } from "@/server/db";
 import {
   PERIODS,
   bucketByPeriod,
+  businessDay,
   metresToKm,
   periodRangeStart,
-  startOfUtcDay,
   type Period,
 } from "@/server/domain/periods";
+import { env } from "@/server/env";
 import { notFound } from "@/server/http/errors";
 import { feedbackSelect } from "@/server/modules/feedback/feedback.service";
 import { activeVehicle, liveVehicleStatus, vehicleSummarySelect } from "@/server/modules/vehicles/vehicles";
@@ -28,6 +29,9 @@ export const statsQuerySchema = z.object({
 
 export const vehicleIdParamSchema = z.object({ vehicleId: id("Vehicle ID") });
 
+/** Today in the operator's time zone (the key daily rows are written under). */
+const today = (now: Date) => businessDay(now, env().APP_TIME_ZONE);
+
 const ownedBy = (ownerId: number) => ({ ownerId, ...activeVehicle });
 
 async function ownedVehicleIds(ownerId: number): Promise<number[]> {
@@ -44,7 +48,7 @@ export async function dashboardData(ownerId: number) {
 
 export async function dashboardSummary(ownerId: number, now = new Date()) {
   const vehicleIds = await ownedVehicleIds(ownerId);
-  const date = startOfUtcDay(now);
+  const date = today(now);
   const [distance, trips] = await Promise.all([
     db.dailyDistance.aggregate({ where: { vehicleId: { in: vehicleIds }, date }, _sum: { distanceCovered: true } }),
     db.dailyTrip.aggregate({ where: { vehicleId: { in: vehicleIds }, date }, _sum: { tripCount: true } }),
@@ -57,9 +61,9 @@ export async function dashboardSummary(ownerId: number, now = new Date()) {
   };
 }
 
-/** Per-vehicle stats for one day (defaults to today, UTC) plus the five latest feedback entries. */
+/** Per-vehicle stats for one day (defaults to today in APP_TIME_ZONE) plus the five latest feedback entries. */
 export async function vehicleStats(ownerId: number, day?: string, now = new Date()) {
-  const date = day ? new Date(`${day}T00:00:00.000Z`) : startOfUtcDay(now);
+  const date = day ? new Date(`${day}T00:00:00.000Z`) : today(now);
   const vehicles = await db.vehicle.findMany({
     where: ownedBy(ownerId),
     orderBy: { plateNumber: "asc" },
@@ -81,7 +85,7 @@ export async function vehicleStats(ownerId: number, day?: string, now = new Date
 }
 
 async function periodSeries(vehicleIds: number[], period: Period, now: Date) {
-  const since = periodRangeStart(period, now);
+  const since = periodRangeStart(period, today(now));
   const where = { vehicleId: { in: vehicleIds }, date: { gte: since } };
   const [distances, trips] = await Promise.all([
     db.dailyDistance.findMany({ where, select: { date: true, distanceCovered: true } }),
